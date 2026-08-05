@@ -1,0 +1,18 @@
+# Generated artefacts. Prettier must not touch these, and not only for tidiness.
+#
+# src/types/api.d.ts is produced by `pnpm gen:api` from the backend's OpenAPI contract, and CI
+# proves the committed copy matches a fresh generation (`pnpm gen:api` then `git diff --exit-code`).
+# If prettier reformats it, that check fails on every run for a reason that has nothing to do with
+# the contract — which is worse than not checking, because it trains everyone to ignore a red gate.
+# The committed file is therefore exactly what the generator emits.
+src/types/api.d.ts
+
+# pnpm writes this; its formatting is pnpm's business and reformatting it invites needless churn
+# and, worse, a diff nobody can review against the resolution it records.
+pnpm-lock.yaml
+
+# Build output and reports.
+.next/
+coverage/
+playwright-report/
+test-results/

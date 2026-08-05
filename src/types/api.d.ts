@@ -4,1961 +4,2627 @@
  */
 
 export interface paths {
-  '/api/v1/audit-logs': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the audit trail
+         * @description Newest first. `action` matches by prefix, so `user.` returns every action on users. Filter by acting user, entity, or time range. Sensitive values are masked at write time and never present to be returned.
+         */
+        get: operations["ListAuditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Search the audit trail
-     * @description Newest first. `action` matches by prefix, so `user.` returns every action on users. Filter by acting user, entity, or time range. Sensitive values are masked at write time and never present to be returned.
-     */
-    get: operations['ListAuditLogs'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/audit-logs/{auditLogId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/audit-logs/{auditLogId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One entry with its before/after values
+         * @description `oldValues` and `newValues` are JSON objects of the properties that changed.
+         */
+        get: operations["GetAuditLog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * One entry with its before/after values
-     * @description `oldValues` and `newValues` are JSON objects of the properties that changed.
-     */
-    get: operations['GetAuditLog'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/change-password': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change your own password
+         * @description Requires the current password. Rotates the security stamp and revokes every refresh token, including the caller's — the client must sign in again.
+         */
+        post: operations["ChangePassword"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Change your own password
-     * @description Requires the current password. Rotates the security stamp and revokes every refresh token, including the caller's — the client must sign in again.
-     */
-    post: operations['ChangePassword'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/login': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sign in with email and password
+         * @description Returns a short-lived access token in the body and sets the rotating refresh token as an httpOnly cookie. Rate-limited per client IP; repeated failures lock the account for the configured lockout period.
+         */
+        post: operations["SignIn"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Sign in with email and password
-     * @description Returns a short-lived access token in the body and sets the rotating refresh token as an httpOnly cookie. Rate-limited per client IP; repeated failures lock the account for the configured lockout period.
-     */
-    post: operations['SignIn'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/logout': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke the current session
+         * @description Idempotent: succeeds whether or not a valid refresh cookie was presented.
+         */
+        post: operations["SignOut"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Revoke the current session
-     * @description Idempotent: succeeds whether or not a valid refresh cookie was presented.
-     */
-    post: operations['SignOut'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The signed-in user and their effective permissions
+         * @description The single source the frontend gates its UI from. Permissions here are advisory for display only — the API enforces them independently on every call.
+         */
+        get: operations["GetCurrentUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * The signed-in user and their effective permissions
-     * @description The single source the frontend gates its UI from. Permissions here are advisory for display only — the API enforces them independently on every call.
-     */
-    get: operations['GetCurrentUser'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/auth/refresh': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Exchange the refresh cookie for a new access token
+         * @description Rotates the refresh token: the presented token is revoked and replaced. Presenting an already-rotated token is treated as a leak and revokes the rest of that rotation chain.
+         */
+        post: operations["RefreshSession"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Exchange the refresh cookie for a new access token
-     * @description Rotates the refresh token: the presented token is revoked and replaced. Presenting an already-rotated token is treated as a leak and revokes the rest of that rotation chain.
-     */
-    post: operations['RefreshSession'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/gyms': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/gyms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List gyms
+         * @description Paged and filterable. `search` matches name, slug, and owner email; `status` filters on Provisioning, Active, Suspended, or Deleted; `country` filters on ISO alpha-2. Deleted gyms are excluded unless `includeDeleted=true`, so a deleted tenant is never counted in a figure someone reports upward. `pageSize` is capped server-side.
+         */
+        get: operations["ListGyms"];
+        put?: never;
+        /**
+         * Provision a gym
+         * @description The gym is created in Provisioning: set up — branding, staff — before members can reach it, then `activate` when it opens. The slug is permanent and is never reused, including by a deleted gym, because it appears in URLs members may still have. Returns the created gym and its `ETag`, so no follow-up GET is needed.
+         */
+        post: operations["ProvisionGym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * List gyms
-     * @description Paged and filterable. `search` matches name, slug, and owner email; `status` filters on Provisioning, Active, Suspended, or Deleted; `country` filters on ISO alpha-2. Deleted gyms are excluded unless `includeDeleted=true`, so a deleted tenant is never counted in a figure someone reports upward. `pageSize` is capped server-side.
-     */
-    get: operations['ListGyms'];
-    put?: never;
-    /**
-     * Provision a gym
-     * @description The gym is created in Provisioning: set up — branding, staff — before members can reach it, then `activate` when it opens. The slug is permanent and is never reused, including by a deleted gym, because it appears in URLs members may still have. Returns the created gym and its `ETag`, so no follow-up GET is needed.
-     */
-    post: operations['ProvisionGym'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/gyms/{gymId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/gyms/{gymId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One gym, with its branding
+         * @description A soft-deleted gym still resolves here, deliberately: an operator investigating why a tenant stopped working needs to see that it was deleted and when. Subscription, resolved features, device summary, and aggregate stats arrive with the modules that own them (M3–M6) rather than as fields that always read zero.
+         */
+        get: operations["GetGym"];
+        /**
+         * Change a gym's details
+         * @description Slug is not editable — it is the gym's public address and the confirmation phrase for deletion. Requires `If-Match` carrying the `rowVersion` you read: without it the request is refused with 428, and a stale version with 409. Returns the updated gym and its new `ETag`.
+         */
+        put: operations["UpdateGym"];
+        post?: never;
+        /**
+         * Soft-delete a gym
+         * @description Requires the `X-Confirm-Action` header carrying the gym's slug (AD-6): this removes an entire business's access, so a mis-clicked row in a list must not be able to do it. The row survives the retention window so invoices and audit entries stay readable; a purge job performs the hard delete. Terminal — there is no undelete. Repeating the call on an already-deleted gym succeeds. `GET` the gym afterwards to see the recorded deletion.
+         */
+        delete: operations["DeleteGym"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * One gym, with its branding
-     * @description A soft-deleted gym still resolves here, deliberately: an operator investigating why a tenant stopped working needs to see that it was deleted and when. Subscription, resolved features, device summary, and aggregate stats arrive with the modules that own them (M3–M6) rather than as fields that always read zero.
-     */
-    get: operations['GetGym'];
-    /**
-     * Change a gym's details
-     * @description Slug is not editable — it is the gym's public address and the confirmation phrase for deletion. Requires `If-Match` carrying the `rowVersion` you read: without it the request is refused with 428, and a stale version with 409. Returns the updated gym and its new `ETag`.
-     */
-    put: operations['UpdateGym'];
-    post?: never;
-    /**
-     * Soft-delete a gym
-     * @description Requires the `X-Confirm-Action` header carrying the gym's slug (AD-6): this removes an entire business's access, so a mis-clicked row in a list must not be able to do it. The row survives the retention window so invoices and audit entries stay readable; a purge job performs the hard delete. Terminal — there is no undelete. Repeating the call on an already-deleted gym succeeds. `GET` the gym afterwards to see the recorded deletion.
-     */
-    delete: operations['DeleteGym'];
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/gyms/{gymId}/activate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/gyms/{gymId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open a provisioned gym for business
+         * @description The deliberate moment a gym goes live. Only a gym in Provisioning can be activated: a suspended gym goes through `reactivate`, which is a different decision and a different permission. `If-Match` is honored when supplied but not required — the lifecycle transition rules already refuse the unsafe orderings. Returns the updated gym.
+         */
+        post: operations["ActivateGym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Open a provisioned gym for business
-     * @description The deliberate moment a gym goes live. Only a gym in Provisioning can be activated: a suspended gym goes through `reactivate`, which is a different decision and a different permission. `If-Match` is honored when supplied but not required — the lifecycle transition rules already refuse the unsafe orderings. Returns the updated gym.
-     */
-    post: operations['ActivateGym'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/gyms/{gymId}/branding': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/gyms/{gymId}/branding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace a gym's branding
+         * @description Declarative: send the complete branding, and an omitted value is cleared. A custom domain must be unique across the platform. Requires `If-Match` carrying the gym's `rowVersion` — branding is part of the gym's representation and shares its version, so a successful branding change also moves the gym's `ETag`. Returns the updated gym.
+         */
+        put: operations["UpdateGymBranding"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    /**
-     * Replace a gym's branding
-     * @description Declarative: send the complete branding, and an omitted value is cleared. A custom domain must be unique across the platform. Requires `If-Match` carrying the gym's `rowVersion` — branding is part of the gym's representation and shares its version, so a successful branding change also moves the gym's `ETag`. Returns the updated gym.
-     */
-    put: operations['UpdateGymBranding'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/gyms/{gymId}/reactivate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/gyms/{gymId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lift a suspension
+         * @description Returns the gym to Active and clears the suspension reason. Only a suspended gym can be reactivated. `If-Match` is honored when supplied but not required. Returns the updated gym.
+         */
+        post: operations["ReactivateGym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Lift a suspension
-     * @description Returns the gym to Active and clears the suspension reason. Only a suspended gym can be reactivated. `If-Match` is honored when supplied but not required. Returns the updated gym.
-     */
-    post: operations['ReactivateGym'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/gyms/{gymId}/suspend': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/gyms/{gymId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withhold service from a gym
+         * @description Reversible. The reason is required and is returned by the API — an operator lifting the suspension next week needs to know why it happened. `If-Match` is honored when supplied but not required. Returns the updated gym.
+         */
+        post: operations["SuspendGym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Withhold service from a gym
-     * @description Reversible. The reason is required and is returned by the API — an operator lifting the suspension next week needs to know why it happened. `If-Match` is honored when supplied but not required. Returns the updated gym.
-     */
-    post: operations['SuspendGym'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/roles': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List subscription plans
+         * @description Paged. `search` matches name and code; `isPublic` filters listed versus unlisted plans. Withdrawn (inactive) plans are excluded unless `includeInactive=true` — the catalogue an operator means is the one they can sell from. `pageSize` is capped server-side.
+         */
+        get: operations["ListPlans"];
+        put?: never;
+        /**
+         * Create a subscription plan
+         * @description The plan starts active and public with no prices; add prices separately. The code is permanent and must be unique — it identifies the plan in exports and integrations. Limits left empty mean unlimited. Returns the created plan and its `ETag`, so no follow-up GET is needed.
+         */
+        post: operations["CreatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * List platform roles
-     * @description Each role reports the permissions it bundles and how many administrators hold it — the number to know before changing what a role grants.
-     */
-    get: operations['ListRoles'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/roles/{roleId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/plans/{planId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One plan, with its prices
+         * @description Prices are returned ordered by period length. An inactive plan still resolves: an operator asking why a gym is on a plan missing from the catalogue needs to see it. Subscribed-gym counts and feature sets arrive with M3.2 and M4 rather than appearing here as zeroes.
+         */
+        get: operations["GetPlan"];
+        /**
+         * Change a plan's details
+         * @description Code is not editable — it is the plan's permanent handle. Requires `If-Match` carrying the `rowVersion` you read: without it the request is refused with 428, and a stale version with 409. Returns the updated plan and its new `ETag`.
+         */
+        put: operations["UpdatePlan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * One role and its permission grants
-     * @description System roles are seeded and their grants are reconciled to the code on every startup, so they are not editable through the API.
-     */
-    get: operations['GetRole'];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/users': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/plans/{planId}/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Return a plan to the catalogue
+         * @description Makes a withdrawn plan assignable again. Returns the updated plan.
+         */
+        post: operations["ActivatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * List platform administrators
-     * @description Paged and filterable. `search` matches email, first name, and last name; `status` filters on Active, Suspended, or PendingActivation. `pageSize` is capped server-side.
-     */
-    get: operations['ListUsers'];
-    put?: never;
-    /**
-     * Create an administrator account
-     * @description The account is created without a password, in PendingActivation, and cannot sign in until its owner sets one. No administrator ever sets another's password. Returns the created administrator and its `ETag`, so no follow-up GET is needed.
-     */
-    post: operations['InviteUser'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/users/{userId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/plans/{planId}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw a plan from the catalogue
+         * @description **This is the closest thing to a delete that exists.** Plans are never destroyed — subscriptions and invoices reference them, and destroying one would orphan the record of what a gym agreed to pay. Gyms already on the plan keep it and keep billing; it simply cannot be newly assigned. Returns the updated plan.
+         */
+        post: operations["DeactivatePlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * One administrator, with roles and resolved permissions
-     * @description Returns the effective permission set alongside the roles that grant it.
-     */
-    get: operations['GetUser'];
-    /**
-     * Change an administrator's name
-     * @description Email is not editable here — it is the login identity and the audit key. Requires `If-Match` carrying the `rowVersion` you read: without it the request is refused with 428, and a stale version with 409. Returns the updated administrator and its new `ETag`.
-     */
-    put: operations['UpdateUser'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/users/{userId}/reactivate': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/plans/{planId}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the price for one cycle and currency
+         * @description Adds the price, or changes it if one already exists for that cycle and currency — one intent, so one operation. Prices are rows, so offering annual billing or a second currency is data entry rather than a schema change. **Existing subscriptions are unaffected**: they hold a price snapshot, so a change applies to new assignments and renewals only. `If-Match` is honoured when supplied. Returns the updated plan.
+         */
+        put: operations["SetPlanPrice"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Lift a suspension
-     * @description An account that never set a password returns to PendingActivation rather than becoming usable. `If-Match` is honored when supplied but not required. Returns the updated administrator.
-     */
-    post: operations['ReactivateUser'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/users/{userId}/roles': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/plans/{planId}/prices/{planPriceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Withdraw a price
+         * @description Removes the offer for that cycle and currency. Safe for existing subscriptions, which snapshot the price they were assigned. Returns the updated plan.
+         */
+        delete: operations["RemovePlanPrice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    /**
-     * Replace an administrator's roles
-     * @description Declarative: send the complete set. Refused for your own account, and refused when it would remove the role from the last active SuperAdmin. Requires `If-Match` carrying the `rowVersion` you read. Returns the updated administrator.
-     */
-    put: operations['SetUserRoles'];
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/api/v1/users/{userId}/suspend': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/v1/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List platform roles
+         * @description Each role reports the permissions it bundles and how many administrators hold it — the number to know before changing what a role grants.
+         */
+        get: operations["ListRoles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Suspend an administrator and end their sessions
-     * @description Rotates the security stamp and revokes every refresh token, so access ends immediately rather than at token expiry. Refused for your own account, and for the last active SuperAdmin. `If-Match` is honored when supplied but not required — the lifecycle transition rules already refuse the unsafe orderings. Returns the updated administrator.
-     */
-    post: operations['SuspendUser'];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/api/v1/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One role and its permission grants
+         * @description System roles are seeded and their grants are reconciled to the code on every startup, so they are not editable through the API.
+         */
+        get: operations["GetRole"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List platform administrators
+         * @description Paged and filterable. `search` matches email, first name, and last name; `status` filters on Active, Suspended, or PendingActivation. `pageSize` is capped server-side.
+         */
+        get: operations["ListUsers"];
+        put?: never;
+        /**
+         * Create an administrator account
+         * @description The account is created without a password, in PendingActivation, and cannot sign in until its owner sets one. No administrator ever sets another's password. Returns the created administrator and its `ETag`, so no follow-up GET is needed.
+         */
+        post: operations["InviteUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One administrator, with roles and resolved permissions
+         * @description Returns the effective permission set alongside the roles that grant it.
+         */
+        get: operations["GetUser"];
+        /**
+         * Change an administrator's name
+         * @description Email is not editable here — it is the login identity and the audit key. Requires `If-Match` carrying the `rowVersion` you read: without it the request is refused with 428, and a stale version with 409. Returns the updated administrator and its new `ETag`.
+         */
+        put: operations["UpdateUser"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Lift a suspension
+         * @description An account that never set a password returns to PendingActivation rather than becoming usable. `If-Match` is honored when supplied but not required. Returns the updated administrator.
+         */
+        post: operations["ReactivateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace an administrator's roles
+         * @description Declarative: send the complete set. Refused for your own account, and refused when it would remove the role from the last active SuperAdmin. Requires `If-Match` carrying the `rowVersion` you read. Returns the updated administrator.
+         */
+        put: operations["SetUserRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{userId}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suspend an administrator and end their sessions
+         * @description Rotates the security stamp and revokes every refresh token, so access ends immediately rather than at token expiry. Refused for your own account, and for the last active SuperAdmin. `If-Match` is honored when supplied but not required — the lifecycle transition rules already refuse the unsafe orderings. Returns the updated administrator.
+         */
+        post: operations["SuspendUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    AccessTokenResponse: {
-      accessToken: string;
-      /** Format: date-time */
-      expiresAtUtc: string;
-      /** Format: int32 */
-      expiresInSeconds: number | string;
-      tokenType: string;
+    schemas: {
+        AccessTokenResponse: {
+            accessToken: string;
+            /** Format: date-time */
+            expiresAtUtc: string;
+            /** Format: int32 */
+            expiresInSeconds: number | string;
+            tokenType: string;
+        };
+        AuditLogDetail: {
+            newValues: null | string;
+            oldValues: null | string;
+            summary: components["schemas"]["AuditLogListItem"];
+            userAgent: null | string;
+        };
+        AuditLogListItem: {
+            action: string;
+            /** Format: uuid */
+            correlationId: null | string;
+            /** Format: date-time */
+            createdAtUtc: string;
+            /** Format: uuid */
+            entityId: null | string;
+            entityType: null | string;
+            /** Format: uuid */
+            id: string;
+            ipAddress: null | string;
+            userEmail: null | string;
+            /** Format: uuid */
+            userId: null | string;
+        };
+        ChangePasswordRequest: {
+            currentPassword: string;
+            newPassword: string;
+        };
+        CreatePlanRequest: {
+            code: string;
+            description: null | string;
+            /** Format: int32 */
+            maxMembers: null | number | string;
+            /** Format: int32 */
+            maxStaff: null | number | string;
+            /** Format: int32 */
+            maxTrainers: null | number | string;
+            name: string;
+            /** Format: int32 */
+            sortOrder: number | string;
+            /** Format: int64 */
+            storageLimitMb: null | number | string;
+            /** Format: int32 */
+            trialDays: number | string;
+        };
+        CurrentUserResponse: {
+            email: string;
+            firstName: string;
+            /** Format: uuid */
+            id: string;
+            lastName: string;
+            permissions: string[];
+            roles: string[];
+            status: string;
+        };
+        GymBrandingDetail: {
+            customDomain: null | string;
+            emailSenderName: null | string;
+            faviconUrl: null | string;
+            logoUrl: null | string;
+            primaryColour: null | string;
+            secondaryColour: null | string;
+        };
+        GymDetail: {
+            branding: components["schemas"]["GymBrandingDetail"];
+            countryCode: string;
+            /** Format: date-time */
+            createdAtUtc: string;
+            currency: string;
+            /** Format: date-time */
+            deletedAtUtc: null | string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            ownerEmail: string;
+            ownerName: string;
+            phone: null | string;
+            rowVersion: string;
+            slug: string;
+            status: string;
+            suspensionReason: null | string;
+            timeZoneId: string;
+        };
+        GymListItem: {
+            countryCode: string;
+            /** Format: date-time */
+            createdAtUtc: string;
+            currency: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            ownerEmail: string;
+            ownerName: string;
+            slug: string;
+            status: string;
+        };
+        InviteUserRequest: {
+            email: string;
+            firstName: string;
+            lastName: string;
+            roleIds: null | string[];
+        };
+        PagedResultOfAuditLogListItem: {
+            items: components["schemas"]["AuditLogListItem"][];
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+        };
+        PagedResultOfGymListItem: {
+            items: components["schemas"]["GymListItem"][];
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+        };
+        PagedResultOfPlanListItem: {
+            items: components["schemas"]["PlanListItem"][];
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+        };
+        PagedResultOfUserListItem: {
+            items: components["schemas"]["UserListItem"][];
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+        };
+        PlanDetail: {
+            code: string;
+            /** Format: date-time */
+            createdAtUtc: string;
+            description: string;
+            /** Format: uuid */
+            id: string;
+            isActive: boolean;
+            isPublic: boolean;
+            /** Format: int32 */
+            maxMembers: null | number | string;
+            /** Format: int32 */
+            maxStaff: null | number | string;
+            /** Format: int32 */
+            maxTrainers: null | number | string;
+            name: string;
+            prices: components["schemas"]["PlanPriceDetail"][];
+            rowVersion: string;
+            /** Format: int32 */
+            sortOrder: number | string;
+            /** Format: int64 */
+            storageLimitMb: null | number | string;
+            /** Format: int32 */
+            trialDays: number | string;
+        };
+        PlanListItem: {
+            code: string;
+            /** Format: date-time */
+            createdAtUtc: string;
+            /** Format: uuid */
+            id: string;
+            isActive: boolean;
+            isPublic: boolean;
+            name: string;
+            /** Format: int32 */
+            priceCount: number | string;
+            /** Format: int32 */
+            sortOrder: number | string;
+            /** Format: int32 */
+            trialDays: number | string;
+        };
+        PlanPriceDetail: {
+            /** Format: double */
+            amount: number | string;
+            billingCycle: string;
+            /** Format: int32 */
+            billingCycleMonths: number | string;
+            currency: string;
+            /** Format: uuid */
+            id: string;
+        };
+        ProblemDetails: {
+            detail?: null | string;
+            instance?: null | string;
+            /** Format: int32 */
+            status?: null | number | string;
+            title?: null | string;
+            type?: null | string;
+        };
+        ProvisionGymRequest: {
+            countryCode: string;
+            currency: string;
+            name: string;
+            ownerEmail: string;
+            ownerName: string;
+            phone: null | string;
+            slug: string;
+            timeZoneId: string;
+        };
+        RoleDetail: {
+            /** Format: int32 */
+            assignedUserCount: number | string;
+            description: string;
+            /** Format: uuid */
+            id: string;
+            isSystem: boolean;
+            name: string;
+            permissions: string[];
+            scope: string;
+        };
+        RoleSummary: {
+            description: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        SetPlanPriceRequest: {
+            /** Format: double */
+            amount: number | string;
+            billingCycle: string;
+            currency: string;
+        };
+        SetUserRolesRequest: {
+            roleIds: string[];
+        };
+        SignInRequest: {
+            email: string;
+            password: string;
+        };
+        SuspendGymRequest: {
+            reason: string;
+        };
+        SuspendUserRequest: {
+            reason: string;
+        };
+        UpdateGymBrandingRequest: {
+            customDomain: null | string;
+            emailSenderName: null | string;
+            faviconUrl: null | string;
+            logoUrl: null | string;
+            primaryColour: null | string;
+            secondaryColour: null | string;
+        };
+        UpdateGymRequest: {
+            countryCode: string;
+            currency: string;
+            name: string;
+            ownerEmail: string;
+            ownerName: string;
+            phone: null | string;
+            timeZoneId: string;
+        };
+        UpdatePlanRequest: {
+            description: null | string;
+            isPublic: boolean;
+            /** Format: int32 */
+            maxMembers: null | number | string;
+            /** Format: int32 */
+            maxStaff: null | number | string;
+            /** Format: int32 */
+            maxTrainers: null | number | string;
+            name: string;
+            /** Format: int32 */
+            sortOrder: number | string;
+            /** Format: int64 */
+            storageLimitMb: null | number | string;
+            /** Format: int32 */
+            trialDays: number | string;
+        };
+        UpdateUserRequest: {
+            firstName: string;
+            lastName: string;
+        };
+        UserDetail: {
+            /** Format: date-time */
+            createdAtUtc: string;
+            email: string;
+            firstName: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            lastLoginAtUtc: null | string;
+            lastName: string;
+            /** Format: date-time */
+            lockedOutUntilUtc: null | string;
+            /** Format: date-time */
+            passwordChangedAtUtc: null | string;
+            permissions: string[];
+            roles: components["schemas"]["RoleSummary"][];
+            rowVersion: string;
+            status: string;
+            suspensionReason: null | string;
+        };
+        UserListItem: {
+            email: string;
+            firstName: string;
+            /** Format: uuid */
+            id: string;
+            isLockedOut: boolean;
+            /** Format: date-time */
+            lastLoginAtUtc: null | string;
+            lastName: string;
+            roles: string[];
+            status: string;
+        };
     };
-    AuditLogDetail: {
-      newValues: null | string;
-      oldValues: null | string;
-      summary: components['schemas']['AuditLogListItem'];
-      userAgent: null | string;
-    };
-    AuditLogListItem: {
-      action: string;
-      /** Format: uuid */
-      correlationId: null | string;
-      /** Format: date-time */
-      createdAtUtc: string;
-      /** Format: uuid */
-      entityId: null | string;
-      entityType: null | string;
-      /** Format: uuid */
-      id: string;
-      ipAddress: null | string;
-      userEmail: null | string;
-      /** Format: uuid */
-      userId: null | string;
-    };
-    ChangePasswordRequest: {
-      currentPassword: string;
-      newPassword: string;
-    };
-    CurrentUserResponse: {
-      email: string;
-      firstName: string;
-      /** Format: uuid */
-      id: string;
-      lastName: string;
-      permissions: string[];
-      roles: string[];
-      status: string;
-    };
-    GymBrandingDetail: {
-      customDomain: null | string;
-      emailSenderName: null | string;
-      faviconUrl: null | string;
-      logoUrl: null | string;
-      primaryColour: null | string;
-      secondaryColour: null | string;
-    };
-    GymDetail: {
-      branding: components['schemas']['GymBrandingDetail'];
-      countryCode: string;
-      /** Format: date-time */
-      createdAtUtc: string;
-      currency: string;
-      /** Format: date-time */
-      deletedAtUtc: null | string;
-      /** Format: uuid */
-      id: string;
-      name: string;
-      ownerEmail: string;
-      ownerName: string;
-      phone: null | string;
-      rowVersion: string;
-      slug: string;
-      status: string;
-      suspensionReason: null | string;
-      timeZoneId: string;
-    };
-    GymListItem: {
-      countryCode: string;
-      /** Format: date-time */
-      createdAtUtc: string;
-      currency: string;
-      /** Format: uuid */
-      id: string;
-      name: string;
-      ownerEmail: string;
-      ownerName: string;
-      slug: string;
-      status: string;
-    };
-    InviteUserRequest: {
-      email: string;
-      firstName: string;
-      lastName: string;
-      roleIds: null | string[];
-    };
-    PagedResultOfAuditLogListItem: {
-      items: components['schemas']['AuditLogListItem'][];
-      /** Format: int32 */
-      page: number | string;
-      /** Format: int32 */
-      pageSize: number | string;
-      /** Format: int32 */
-      totalCount: number | string;
-      /** Format: int32 */
-      totalPages?: number | string;
-    };
-    PagedResultOfGymListItem: {
-      items: components['schemas']['GymListItem'][];
-      /** Format: int32 */
-      page: number | string;
-      /** Format: int32 */
-      pageSize: number | string;
-      /** Format: int32 */
-      totalCount: number | string;
-      /** Format: int32 */
-      totalPages?: number | string;
-    };
-    PagedResultOfUserListItem: {
-      items: components['schemas']['UserListItem'][];
-      /** Format: int32 */
-      page: number | string;
-      /** Format: int32 */
-      pageSize: number | string;
-      /** Format: int32 */
-      totalCount: number | string;
-      /** Format: int32 */
-      totalPages?: number | string;
-    };
-    ProblemDetails: {
-      detail?: null | string;
-      instance?: null | string;
-      /** Format: int32 */
-      status?: null | number | string;
-      title?: null | string;
-      type?: null | string;
-    };
-    ProvisionGymRequest: {
-      countryCode: string;
-      currency: string;
-      name: string;
-      ownerEmail: string;
-      ownerName: string;
-      phone: null | string;
-      slug: string;
-      timeZoneId: string;
-    };
-    RoleDetail: {
-      /** Format: int32 */
-      assignedUserCount: number | string;
-      description: string;
-      /** Format: uuid */
-      id: string;
-      isSystem: boolean;
-      name: string;
-      permissions: string[];
-      scope: string;
-    };
-    RoleSummary: {
-      description: string;
-      /** Format: uuid */
-      id: string;
-      name: string;
-    };
-    SetUserRolesRequest: {
-      roleIds: string[];
-    };
-    SignInRequest: {
-      email: string;
-      password: string;
-    };
-    SuspendGymRequest: {
-      reason: string;
-    };
-    SuspendUserRequest: {
-      reason: string;
-    };
-    UpdateGymBrandingRequest: {
-      customDomain: null | string;
-      emailSenderName: null | string;
-      faviconUrl: null | string;
-      logoUrl: null | string;
-      primaryColour: null | string;
-      secondaryColour: null | string;
-    };
-    UpdateGymRequest: {
-      countryCode: string;
-      currency: string;
-      name: string;
-      ownerEmail: string;
-      ownerName: string;
-      phone: null | string;
-      timeZoneId: string;
-    };
-    UpdateUserRequest: {
-      firstName: string;
-      lastName: string;
-    };
-    UserDetail: {
-      /** Format: date-time */
-      createdAtUtc: string;
-      email: string;
-      firstName: string;
-      /** Format: uuid */
-      id: string;
-      /** Format: date-time */
-      lastLoginAtUtc: null | string;
-      lastName: string;
-      /** Format: date-time */
-      lockedOutUntilUtc: null | string;
-      /** Format: date-time */
-      passwordChangedAtUtc: null | string;
-      permissions: string[];
-      roles: components['schemas']['RoleSummary'][];
-      rowVersion: string;
-      status: string;
-      suspensionReason: null | string;
-    };
-    UserListItem: {
-      email: string;
-      firstName: string;
-      /** Format: uuid */
-      id: string;
-      isLockedOut: boolean;
-      /** Format: date-time */
-      lastLoginAtUtc: null | string;
-      lastName: string;
-      roles: string[];
-      status: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  ListAuditLogs: {
-    parameters: {
-      query?: {
-        page?: number | string;
-        pageSize?: number | string;
-        search?: string;
-        userId?: string;
-        action?: string;
-        entityType?: string;
-        entityId?: string;
-        from?: string;
-        to?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
+    ListAuditLogs: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+                search?: string;
+                userId?: string;
+                action?: string;
+                entityType?: string;
+                entityId?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfAuditLogListItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    GetAuditLog: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                auditLogId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['PagedResultOfAuditLogListItem'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  GetAuditLog: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        auditLogId: string;
-      };
-      cookie?: never;
+    ChangePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    SignIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['AuditLogDetail'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignInRequest"];
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  ChangePassword: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    SignOut: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ChangePasswordRequest'];
-      };
+    GetCurrentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentUserResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    responses: {
-      /** @description No Content */
-      204: {
-        headers: {
-          [name: string]: unknown;
+    RefreshSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content?: never;
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessTokenResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  SignIn: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    ListGyms: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+                sortBy?: string;
+                sortDir?: string;
+                search?: string;
+                status?: string;
+                country?: string;
+                includeDeleted?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfGymListItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SignInRequest'];
-      };
+    ProvisionGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProvisionGymRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    GetGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['AccessTokenResponse'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Too Many Requests */
-      429: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  SignOut: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    UpdateGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGymRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description No Content */
-      204: {
-        headers: {
-          [name: string]: unknown;
+    DeleteGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
         };
-        content?: never;
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  GetCurrentUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    ActivateGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    UpdateGymBranding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['CurrentUserResponse'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGymBrandingRequest"];
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  RefreshSession: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    ReactivateGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    SuspendGym: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['AccessTokenResponse'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuspendGymRequest"];
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GymDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  ListGyms: {
-    parameters: {
-      query?: {
-        page?: number | string;
-        pageSize?: number | string;
-        sortBy?: string;
-        sortDir?: string;
-        search?: string;
-        status?: string;
-        country?: string;
-        includeDeleted?: boolean;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
+    ListPlans: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+                sortBy?: string;
+                sortDir?: string;
+                search?: string;
+                includeInactive?: boolean;
+                isPublic?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfPlanListItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    CreatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['PagedResultOfGymListItem'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePlanRequest"];
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  ProvisionGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    GetPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['ProvisionGymRequest'];
-      };
+    UpdatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePlanRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    responses: {
-      /** @description Created */
-      201: {
-        headers: {
-          [name: string]: unknown;
+    ActivatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  GetGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
+    DeactivatePlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    SetPlanPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPlanPriceRequest"];
+            };
         };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  UpdateGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
+    RemovePlanPrice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+                planPriceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateGymRequest'];
-      };
+    ListRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    GetRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roleId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Precondition Required */
-      428: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  DeleteGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
+    ListUsers: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+                sortBy?: string;
+                sortDir?: string;
+                search?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfUserListItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description No Content */
-      204: {
-        headers: {
-          [name: string]: unknown;
+    InviteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content?: never;
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserRequest"];
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  ActivateGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
+    GetUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    UpdateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRequest"];
+            };
         };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  UpdateGymBranding: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
+    ReactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateGymBrandingRequest'];
-      };
+    SetUserRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetUserRolesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
     };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    SuspendUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: string;
+            };
+            cookie?: never;
         };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuspendUserRequest"];
+            };
         };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Precondition Required */
-      428: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
     };
-  };
-  ReactivateGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  SuspendGym: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        gymId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SuspendGymRequest'];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['GymDetail'];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  ListRoles: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RoleDetail'][];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  GetRole: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        roleId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['RoleDetail'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  ListUsers: {
-    parameters: {
-      query?: {
-        page?: number | string;
-        pageSize?: number | string;
-        sortBy?: string;
-        sortDir?: string;
-        search?: string;
-        status?: string;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['PagedResultOfUserListItem'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  InviteUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['InviteUserRequest'];
-      };
-    };
-    responses: {
-      /** @description Created */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserDetail'];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  GetUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserDetail'];
-        };
-      };
-      /** @description Unauthorized */
-      401: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  UpdateUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['UpdateUserRequest'];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserDetail'];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Precondition Required */
-      428: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  ReactivateUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserDetail'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  SetUserRoles: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SetUserRolesRequest'];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserDetail'];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Precondition Required */
-      428: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
-  SuspendUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        userId: string;
-      };
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        'application/json': components['schemas']['SuspendUserRequest'];
-      };
-    };
-    responses: {
-      /** @description OK */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/json': components['schemas']['UserDetail'];
-        };
-      };
-      /** @description Bad Request */
-      400: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Forbidden */
-      403: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Not Found */
-      404: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-      /** @description Conflict */
-      409: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          'application/problem+json': components['schemas']['ProblemDetails'];
-        };
-      };
-    };
-  };
 }

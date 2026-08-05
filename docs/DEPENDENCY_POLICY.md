@@ -7,6 +7,19 @@ explain is a mystery.
 
 ## Rules
 
+0. **Nothing published in the last two days is installed.** `minimumReleaseAge: 2880` in
+   `pnpm-workspace.yaml`. A brand-new version is the window in which a compromised maintainer account
+   or a typosquat is most likely to be caught, and this project never needs a package on its release
+   day. The setting lives in the repo, not only in a developer's global config, so the lockfile —
+   which is the artefact that has to comply — is generated the same way everywhere, CI included.
+   `packageManager` pins the pnpm version so nobody's toolchain silently lacks the policy.
+
+   If a resolution is refused, the fix is `pnpm clean --lockfile && pnpm install`, which re-resolves
+   to the newest versions _older_ than the cutoff. Relaxing the policy is not the fix.
+
+0b. **No package runs install-time scripts unless it is named in `allowBuilds`,** with a reason. An
+install script is arbitrary code execution from a package nobody read.
+
 1. Every package in `dependencies` and `devDependencies` appears in the allowlist below, with its
    licence and the reason it earns its place. Transitive dependencies are not listed (pnpm's lockfile
    pins them), but a direct dependency is a decision.

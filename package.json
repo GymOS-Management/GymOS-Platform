@@ -1,7 +1,12 @@
 {
   "name": "gymos-platform",
   "version": "0.1.0",
-  "description": "",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,9 +19,6 @@
     "test:e2e": "playwright test",
     "gen:api": "openapi-typescript ../GymOS-Backend/contracts/openapi-v1.json -o src/types/api.d.ts"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
     "@radix-ui/react-dialog": "^1.1.23",
@@ -59,5 +61,8 @@
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
   },
-  "private": true
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

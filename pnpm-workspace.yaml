@@ -1,0 +1,23 @@
+# Supply-chain policy: never resolve a package published within the last two days (2880 minutes).
+#
+# A freshly published version is the window in which a compromised maintainer account or a
+# typosquat is most likely to be caught — malicious releases are usually yanked within hours.
+# Waiting costs this project nothing: nothing here needs a package the day it ships.
+#
+# It lives in the repo rather than only in a developer's global config so that every machine and
+# CI resolve identically. Added after a lockfile generated *without* the policy pinned
+# `rolldown@1.2.3` some hours after publication, which a colleague's machine then correctly
+# refused to install. The lockfile is the artefact that has to comply, so the policy belongs
+# beside it.
+minimumReleaseAge: 2880
+
+# Packages permitted to run install-time scripts.
+#
+# pnpm blocks postinstall scripts by default, and rightly: an install script is arbitrary code
+# execution from a package nobody has read. This is an allowlist in the same spirit as
+# docs/DEPENDENCY_POLICY.md — a package earns an entry with a reason, or it does not run code.
+#
+# unrs-resolver: fetches the native binding ESLint's import resolver uses. Arrives transitively
+#   via eslint-config-next; without it `pnpm lint` cannot resolve the `@/` path alias.
+allowBuilds:
+  unrs-resolver: true

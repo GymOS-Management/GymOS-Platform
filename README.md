@@ -18,10 +18,17 @@ ship.
 ## Running it
 
 ```bash
-pnpm install
+pnpm install        # pnpm 11+ — the version is pinned in package.json's `packageManager`
 pnpm gen:api        # regenerate DTO types from ../GymOS-Backend/contracts/openapi-v1.json
 pnpm dev            # http://localhost:3000
 ```
+
+**If `pnpm install` reports a supply-chain policy violation**, the lockfile is stale rather than
+malicious: `minimumReleaseAge` (see `pnpm-workspace.yaml`) refuses packages published in the last two
+days, and a transitive dependency has since released. Run `pnpm clean --lockfile && pnpm install` to
+re-resolve to versions older than the cutoff, then commit the lockfile. Do not relax the policy to get
+past it, and do read the lockfile diff — that message also fires when someone commits a lockfile that
+bypassed the policy locally.
 
 A backend must be running on `http://localhost:5080` (override with `GYMOS_API_ORIGIN`). Start one per
 [`tests/e2e/README.md`](tests/e2e/README.md).
