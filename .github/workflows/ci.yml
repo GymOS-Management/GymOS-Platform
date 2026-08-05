@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  # Static gates: fast, no services, and they catch the things a browser never would.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Dependency policy
+        run: node scripts/check-dependencies.mjs
+
+      - name: Types match the committed API contract
+        # The generated types are checked in, so drift between them and the backend's contract is
+        # visible in review rather than discovered at runtime (AD-12). Regenerate with `pnpm gen:api`.
+        run: |
+          if [ -f ../GymOS-Backend/contracts/openapi-v1.json ]; then
+            pnpm gen:api
+            git diff --exit-code src/types/api.d.ts
+          else
+            echo "Backend contract not checked out; skipping drift check."
+          fi
+
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm test
+      - run: pnpm build
+
+  # The journey against a real backend and a real database. Separate job: it needs services and
+  # minutes, and a failure here means something different from a failing unit test.
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: gymos
+          POSTGRES_PASSWORD: gymos
+          POSTGRES_DB: gymos
+        ports: ['5433:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 10
+    steps:
+      - name: Check out the console
+        uses: actions/checkout@v4
+        with:
+          path: GymOS-Platform
+
+      - name: Check out the backend
+        uses: actions/checkout@v4
+        with:
+          repository: GymOS-Management/GymOS-Backend
+          path: GymOS-Backend
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: GymOS-Platform/pnpm-lock.yaml
+
+      - name: Start the API
+        working-directory: GymOS-Backend
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ASPNETCORE_URLS: http://localhost:5080
+          ConnectionStrings__Database: Host=localhost;Port=5433;Database=gymos;Username=gymos;Password=gymos
+          Seed__SuperAdmin__Email: e2e@gymos.test
+          Seed__SuperAdmin__Password: e2e-super-admin-password
+          # See tests/e2e/README.md: every test signs in fresh, which is more than the
+          # production-appropriate limit allows. Raised on the test instance only.
+          Security__RateLimiting__SignInAttemptsPerWindow: '500'
+        run: |
+          dotnet run --project src/Host/GymOS.WebApi &
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:5080/health/ready > /dev/null; then exit 0; fi
+            sleep 2
+          done
+          echo "API did not become ready" && exit 1
+
+      - name: Install and run
+        working-directory: GymOS-Platform
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:e2e
+
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: GymOS-Platform/playwright-report/
+          retention-days: 7
