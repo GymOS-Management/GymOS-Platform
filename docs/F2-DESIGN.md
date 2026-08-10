@@ -50,7 +50,7 @@ Three headers are enforced by the pipeline and documented only in prose:
 | Header             | Enforced by                              | Failure without it                       | Declared? |
 | ------------------ | ---------------------------------------- | ---------------------------------------- | --------- |
 | `Idempotency-Key`  | `IdempotencyHeaderMiddleware` (AD-39)    | `400 idempotency.key_required`           | No        |
-| `If-Match`         | `PreconditionHeaders.IfMatch` call sites | `428` on plan writes                     | No        |
+| `If-Match`         | `versionRequired: true` in the command    | `428` on the five PUTs; optional elsewhere (D5) | No        |
 | `X-Confirm-Action` | `ConfirmationHeaders` (AD-6)             | `invoices.confirmation_mismatch` on void | No        |
 
 All three are in F2's own surface, not borrowed from elsewhere: `POST /invoices/{id}/mark-paid` alone
@@ -112,16 +112,31 @@ deciding what to sell and deciding what one customer pays are different powers.
 
 Per F1's standing rule, `usePermission()` hides UI and never authorizes — the API re-checks every call.
 
-### D5 — `If-Match` on plans **and invoices**, nothing on subscription assignment
+### D5 — `If-Match` is required on PUTs and optional on action endpoints
 
-Plan writes read `If-Match` and answer `428` without it. **So do both invoice writes** —
-`mark-paid` and `void` each read it and return the new `rowVersion`, so the ETag must be captured from
-the invoice detail and round-tripped exactly as F1's D6 does for gyms. `PUT /gyms/{gymId}/subscription`
-neither takes nor needs one.
+**Corrected 2026-08-11 during implementation.** An earlier draft of this decision said every write that
+reads `If-Match` requires it. It does not, and the distinction is deliberate: `versionRequired` is the
+source of truth, and only five commands pass `true` — `UpdatePlan`, `UpdateGym`, `UpdateGymBranding`,
+`UpdateUser`, `SetUserRoles`. Every one is a **PUT that overwrites fields the caller did not send**,
+where a missing precondition is last-write-wins over data you never saw.
 
-The asymmetry is the backend's deliberate choice and the client mirrors it rather than smoothing it into
-a false uniformity. Note what this means for `mark-paid`: it carries **three** headers —
-`Idempotency-Key`, `If-Match`, and the bearer token — none of which the contract declares today (§3).
+Action endpoints — plan activate/deactivate and price writes, gym lifecycle, invoice `mark-paid` and
+`void`, the subscription writes — pass `versionRequired: false`. They **honour** `If-Match` when it is
+supplied (a stale value is still refused with 409) but do not demand it, because each changes one
+explicit thing rather than overwriting a whole resource.
+
+So the client:
+
+- sends `precondition: true` on the five PUTs, where omitting it is `428`;
+- sends the read `rowVersion` on invoice `mark-paid` and `void` **by choice**, not by obligation — an
+  operator marking an invoice paid from a stale screen should be refused, and supplying the version is
+  what buys that;
+- sends nothing on `PUT /gyms/{gymId}/subscription`, which neither takes nor needs one.
+
+What this means for `mark-paid`: it carries **three** headers — `Idempotency-Key` (required),
+`If-Match` (optional but sent), and the bearer token — and the contract declares none of them today
+(§3). The fix in §3 must declare each with the requiredness the pipeline actually applies; a contract
+that overstates enforcement is the same defect as one that hides it.
 
 ### D5a — Voiding an invoice is a step-up action, confirmed by its number
 
