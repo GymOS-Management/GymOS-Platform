@@ -236,6 +236,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/gyms/{gymId}/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every invoice ever issued to one gym
+         * @description Newest first, unpaged — the billing conversation with one gym reads top to bottom. An unknown gym returns an empty list rather than 404: "no invoices" is the truthful answer either way, and the gym endpoints are where a gym's existence is asked about.
+         */
+        get: operations["ListGymInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/gyms/{gymId}/reactivate": {
         parameters: {
             query?: never;
@@ -256,6 +276,132 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/gyms/{gymId}/subscription": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A gym's current subscription
+         * @description Returns the live subscription — trialing, active, or past due. 404 when the gym has none, which is a normal state: a gym can exist before it is sold anything. The price returned is the one agreed at assignment, not the plan's current price.
+         */
+        get: operations["GetGymSubscription"];
+        /**
+         * Put the gym on a plan, or move it to another
+         * @description One operation for both: assigns a subscription when the gym has none, and changes the plan or terms when it does. `billingCycle` and `currency` must match a price the plan actually offers — an absent combination is refused rather than approximated, since guessing would bill an amount nobody agreed to.
+         *
+         *     A withdrawn plan cannot be newly assigned, though a gym already on one keeps it. The agreed price is **copied**, so later repricing of the plan never changes what this gym pays. Changing plan leaves the paid period alone; charging or crediting the difference is proration, which arrives with invoices in M3.3.
+         */
+        put: operations["AssignGymSubscription"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gyms/{gymId}/subscription/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel the subscription
+         * @description By default schedules cancellation for the end of the paid period, so the gym keeps what it has paid for and `cancelAtPeriodEnd` becomes true. Send `immediately: true` to end it now and forfeit the remainder — a deliberate choice. Ending it now is terminal: a gym that returns gets a new subscription, leaving this one as the record of what it had.
+         */
+        post: operations["CancelGymSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gyms/{gymId}/subscription/convert-trial": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End the trial and start billing
+         * @description Explicit for now: the renewal job (M3.4) will do this on the trial's end date. Until then a trial that has run out stays `Trialing` with `trialEndsAtUtc` in the past, which is legible rather than wrong.
+         */
+        post: operations["ConvertGymTrial"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gyms/{gymId}/subscription/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every subscription this gym has had
+         * @description Newest first, including ended ones. Subscriptions are never deleted — they are what a billing dispute is settled from.
+         */
+        get: operations["ListGymSubscriptionHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gyms/{gymId}/subscription/payment-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record that payment is late, or has arrived
+         * @description `pastDue: true` marks it late; `false` marks it paid and returns it to active. **Service is not withheld either way** — whether a late-paying gym keeps operating is a separate decision, taken by suspending the gym. Every failed card must not end a business's day.
+         */
+        post: operations["SetGymSubscriptionPaymentState"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gyms/{gymId}/subscription/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Withdraw a scheduled cancellation
+         * @description Clears `cancelAtPeriodEnd` while the period is still running. It cannot revive a subscription that has already ended.
+         */
+        post: operations["ResumeGymSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/gyms/{gymId}/suspend": {
         parameters: {
             query?: never;
@@ -270,6 +416,86 @@ export interface paths {
          * @description Reversible. The reason is required and is returned by the API — an operator lifting the suspension next week needs to know why it happened. `If-Match` is honored when supplied but not required. Returns the updated gym.
          */
         post: operations["SuspendGym"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List invoices
+         * @description Paged and filterable. `status` filters on Draft, Issued, Paid, Overdue, or Void — an unknown value is a 400, never a silently empty page. `gymId` narrows to one tenant; `overdue=true` means issued and past due **now**, derived from the clock rather than stored. `search` matches the invoice number.
+         */
+        get: operations["ListInvoices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One invoice, with its lines
+         * @description Lines carry their own amounts — negative on a credit line, which is how a prorated upgrade shows the unused time it credited. Returns the `ETag` for the optional `If-Match` on mark-paid and void.
+         */
+        get: operations["GetInvoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}/mark-paid": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark an invoice paid
+         * @description Requires an `Idempotency-Key` header (AD-39): marking an invoice paid moves money, so a retried request replays the stored outcome instead of paying twice. The body carries the payment reference — a provider id, bank transfer description, or receipt number — which is required. Optional `If-Match`. Paying the current period's invoice returns a past-due subscription to active in the same transaction.
+         */
+        post: operations["MarkInvoicePaid"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/invoices/{invoiceId}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Void an unpaid invoice
+         * @description Requires the `X-Confirm-Action` header carrying the invoice's number — the M2 deletion-confirmation pattern, because void is irreversible and adjacent to buttons that are not. The row stays: voided is a state, not a deletion, and "this was withdrawn" is exactly what the record must be able to show. A paid invoice cannot be voided.
+         */
+        post: operations["VoidInvoice"];
         delete?: never;
         options?: never;
         head?: never;
@@ -564,6 +790,12 @@ export interface components {
             expiresInSeconds: number | string;
             tokenType: string;
         };
+        AssignSubscriptionRequest: {
+            billingCycle: string;
+            currency: string;
+            /** Format: uuid */
+            planId: string;
+        };
         AuditLogDetail: {
             newValues: null | string;
             oldValues: null | string;
@@ -585,6 +817,11 @@ export interface components {
             userEmail: null | string;
             /** Format: uuid */
             userId: null | string;
+        };
+        CancelSubscriptionRequest: {
+            /** @default false */
+            immediately: boolean;
+            reason: null | string;
         };
         ChangePasswordRequest: {
             currentPassword: string;
@@ -642,6 +879,7 @@ export interface components {
             rowVersion: string;
             slug: string;
             status: string;
+            subscription: null | components["schemas"]["GymSubscriptionSummary"];
             suspensionReason: null | string;
             timeZoneId: string;
         };
@@ -658,11 +896,95 @@ export interface components {
             slug: string;
             status: string;
         };
+        GymSubscriptionSummary: {
+            /** Format: double */
+            amount: number | string;
+            billingCycle: string;
+            cancelAtPeriodEnd: boolean;
+            currency: string;
+            /** Format: date-time */
+            currentPeriodEndUtc: string;
+            /** Format: uuid */
+            id: string;
+            planCode: string;
+            /** Format: uuid */
+            planId: string;
+            planName: string;
+            status: string;
+            /** Format: date-time */
+            trialEndsAtUtc: null | string;
+        };
         InviteUserRequest: {
             email: string;
             firstName: string;
             lastName: string;
             roleIds: null | string[];
+        };
+        InvoiceDetail: {
+            /** Format: date-time */
+            createdAtUtc: string;
+            currency: string;
+            /** Format: date-time */
+            dueAtUtc: string;
+            /** Format: uuid */
+            gymId: string;
+            gymName: string;
+            /** Format: uuid */
+            id: string;
+            invoiceNumber: string;
+            isOverdue: boolean;
+            /** Format: date-time */
+            issuedAtUtc: string;
+            lines: components["schemas"]["InvoiceLineDetail"][];
+            /** Format: date-time */
+            paidAtUtc: null | string;
+            paymentReference: null | string;
+            rowVersion: string;
+            status: string;
+            /** Format: uuid */
+            subscriptionId: string;
+            /** Format: double */
+            subtotal: number | string;
+            /** Format: double */
+            taxAmount: number | string;
+            /** Format: double */
+            taxRate: number | string;
+            /** Format: double */
+            total: number | string;
+        };
+        InvoiceLineDetail: {
+            /** Format: double */
+            amount: number | string;
+            currency: string;
+            description: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            quantity: number | string;
+            /** Format: double */
+            unitPriceAmount: number | string;
+        };
+        InvoiceListItem: {
+            currency: string;
+            /** Format: date-time */
+            dueAtUtc: string;
+            /** Format: uuid */
+            gymId: string;
+            gymName: string;
+            /** Format: uuid */
+            id: string;
+            invoiceNumber: string;
+            isOverdue: boolean;
+            /** Format: date-time */
+            issuedAtUtc: string;
+            /** Format: date-time */
+            paidAtUtc: null | string;
+            status: string;
+            /** Format: double */
+            total: number | string;
+        };
+        MarkInvoicePaidRequest: {
+            paymentReference: null | string;
         };
         PagedResultOfAuditLogListItem: {
             items: components["schemas"]["AuditLogListItem"][];
@@ -677,6 +999,17 @@ export interface components {
         };
         PagedResultOfGymListItem: {
             items: components["schemas"]["GymListItem"][];
+            /** Format: int32 */
+            page: number | string;
+            /** Format: int32 */
+            pageSize: number | string;
+            /** Format: int32 */
+            totalCount: number | string;
+            /** Format: int32 */
+            totalPages?: number | string;
+        };
+        PagedResultOfInvoiceListItem: {
+            items: components["schemas"]["InvoiceListItem"][];
             /** Format: int32 */
             page: number | string;
             /** Format: int32 */
@@ -708,6 +1041,16 @@ export interface components {
             /** Format: int32 */
             totalPages?: number | string;
         };
+        PendingPlanChangeDetail: {
+            /** Format: double */
+            amount: number | string;
+            billingCycle: string;
+            /** Format: date-time */
+            changeAtUtc: string;
+            currency: string;
+            /** Format: uuid */
+            planId: string;
+        };
         PlanDetail: {
             code: string;
             /** Format: date-time */
@@ -731,6 +1074,8 @@ export interface components {
             /** Format: int64 */
             storageLimitMb: null | number | string;
             /** Format: int32 */
+            subscribedGymCount: number | string;
+            /** Format: int32 */
             trialDays: number | string;
         };
         PlanListItem: {
@@ -746,6 +1091,8 @@ export interface components {
             priceCount: number | string;
             /** Format: int32 */
             sortOrder: number | string;
+            /** Format: int32 */
+            subscribedGymCount: number | string;
             /** Format: int32 */
             trialDays: number | string;
         };
@@ -794,6 +1141,9 @@ export interface components {
             id: string;
             name: string;
         };
+        SetPaymentStateRequest: {
+            pastDue: boolean;
+        };
         SetPlanPriceRequest: {
             /** Format: double */
             amount: number | string;
@@ -806,6 +1156,38 @@ export interface components {
         SignInRequest: {
             email: string;
             password: string;
+        };
+        SubscriptionDetail: {
+            /** Format: double */
+            amount: number | string;
+            autoRenew: boolean;
+            billingCycle: string;
+            /** Format: int32 */
+            billingCycleMonths: number | string;
+            cancelAtPeriodEnd: boolean;
+            /** Format: date-time */
+            canceledAtUtc: null | string;
+            cancellationReason: null | string;
+            /** Format: date-time */
+            createdAtUtc: string;
+            currency: string;
+            /** Format: date-time */
+            currentPeriodEndUtc: string;
+            /** Format: date-time */
+            currentPeriodStartUtc: string;
+            /** Format: uuid */
+            gymId: string;
+            /** Format: uuid */
+            id: string;
+            pendingChange?: null | components["schemas"]["PendingPlanChangeDetail"];
+            planCode: string;
+            /** Format: uuid */
+            planId: string;
+            planName: string;
+            rowVersion: string;
+            status: string;
+            /** Format: date-time */
+            trialEndsAtUtc: null | string;
         };
         SuspendGymRequest: {
             reason: string;
@@ -1342,7 +1724,10 @@ export interface operations {
     UpdateGym: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
             path: {
                 gymId: string;
             };
@@ -1413,7 +1798,12 @@ export interface operations {
     DeleteGym: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Step-up confirmation, echoing the resource's own identifier (a gym's slug, an invoice's number). A header rather than a body field so it survives DELETE and cannot be replayed by a script that never read the resource. */
+                "X-Confirm-Action": string;
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 gymId: string;
             };
@@ -1469,7 +1859,10 @@ export interface operations {
     ActivateGym: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 gymId: string;
             };
@@ -1518,7 +1911,10 @@ export interface operations {
     UpdateGymBranding: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
             path: {
                 gymId: string;
             };
@@ -1586,10 +1982,53 @@ export interface operations {
             };
         };
     };
-    ReactivateGym: {
+    ListGymInvoices: {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceListItem"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ReactivateGym: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 gymId: string;
             };
@@ -1635,10 +2074,383 @@ export interface operations {
             };
         };
     };
-    SuspendGym: {
+    GetGymSubscription: {
         parameters: {
             query?: never;
             header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    AssignGymSubscription: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    CancelGymSubscription: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelSubscriptionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ConvertGymTrial: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListGymSubscriptionHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SetGymSubscriptionPaymentState: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPaymentStateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ResumeGymSubscription: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionDetail"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SuspendGym: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 gymId: string;
             };
@@ -1661,6 +2473,259 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListInvoices: {
+        parameters: {
+            query?: {
+                page?: number | string;
+                pageSize?: number | string;
+                sortBy?: string;
+                sortDir?: string;
+                search?: string;
+                status?: string;
+                gymId?: string;
+                overdue?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PagedResultOfInvoiceListItem"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetInvoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    MarkInvoicePaid: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description A caller-chosen key, one per intent (a UUID is recommended). Retrying with the same key replays the stored outcome instead of repeating the effect. Omitting it is 400 `idempotency.key_required`. */
+                "Idempotency-Key": string;
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": null | components["schemas"]["MarkInvoicePaidRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    VoidInvoice: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Step-up confirmation, echoing the resource's own identifier (a gym's slug, an invoice's number). A header rather than a body field so it survives DELETE and cannot be replayed by a script that never read the resource. */
+                "X-Confirm-Action": string;
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
+            path: {
+                invoiceId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvoiceDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1855,7 +2920,10 @@ export interface operations {
     UpdatePlan: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
             path: {
                 planId: string;
             };
@@ -1926,7 +2994,10 @@ export interface operations {
     ActivatePlan: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 planId: string;
             };
@@ -1975,7 +3046,10 @@ export interface operations {
     DeactivatePlan: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 planId: string;
             };
@@ -2024,7 +3098,10 @@ export interface operations {
     SetPlanPrice: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 planId: string;
             };
@@ -2086,7 +3163,10 @@ export interface operations {
     RemovePlanPrice: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 planId: string;
                 planPriceId: string;
@@ -2377,7 +3457,10 @@ export interface operations {
     UpdateUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
             path: {
                 userId: string;
             };
@@ -2448,7 +3531,10 @@ export interface operations {
     ReactivateUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 userId: string;
             };
@@ -2497,7 +3583,10 @@ export interface operations {
     SetUserRoles: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
             path: {
                 userId: string;
             };
@@ -2568,7 +3657,10 @@ export interface operations {
     SuspendUser: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
+                "If-Match"?: string;
+            };
             path: {
                 userId: string;
             };

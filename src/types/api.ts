@@ -50,3 +50,41 @@ export type GymStatus = (typeof GYM_STATUSES)[number];
 
 export const USER_STATUSES = ['PendingActivation', 'Active', 'Suspended'] as const;
 export type UserStatus = (typeof USER_STATUSES)[number];
+
+export type PlanListItem = Schemas['PlanListItem'];
+export type PlanDetail = Schemas['PlanDetail'];
+export type PlanPriceDetail = Schemas['PlanPriceDetail'];
+export type CreatePlanRequest = Schemas['CreatePlanRequest'];
+export type UpdatePlanRequest = Schemas['UpdatePlanRequest'];
+export type SetPlanPriceRequest = Schemas['SetPlanPriceRequest'];
+export type PagedPlans = Schemas['PagedResultOfPlanListItem'];
+
+export type SubscriptionDetail = Schemas['SubscriptionDetail'];
+export type GymSubscriptionSummary = Schemas['GymSubscriptionSummary'];
+export type PendingPlanChangeDetail = Schemas['PendingPlanChangeDetail'];
+export type AssignSubscriptionRequest = Schemas['AssignSubscriptionRequest'];
+export type CancelSubscriptionRequest = Schemas['CancelSubscriptionRequest'];
+
+export type InvoiceListItem = Schemas['InvoiceListItem'];
+export type InvoiceDetail = Schemas['InvoiceDetail'];
+export type InvoiceLineDetail = Schemas['InvoiceLineDetail'];
+export type MarkInvoicePaidRequest = Schemas['MarkInvoicePaidRequest'];
+export type PagedInvoices = Schemas['PagedResultOfInvoiceListItem'];
+
+/**
+ * Subscription lifecycle, by name as the API reports it. `Canceled` and `Expired` are deliberately
+ * distinct: cancellation is a decision and expiry is a failure to collect, and M5's churn figure
+ * depends on never collapsing them.
+ */
+export const SUBSCRIPTION_STATUSES = [
+  'Trialing',
+  'Active',
+  'PastDue',
+  'Canceled',
+  'Expired',
+] as const;
+export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
+
+/** `Draft` is declared by the API but has no producer yet; it is listed for completeness only. */
+export const INVOICE_STATUSES = ['Draft', 'Issued', 'Paid', 'Overdue', 'Void'] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];

@@ -14,6 +14,19 @@ const TONES: Record<string, React.ComponentProps<typeof Badge>['tone']> = {
 
   // Users
   PendingActivation: 'info',
+
+  // Subscriptions (M3.2)
+  Trialing: 'info',
+  PastDue: 'warning',
+  Canceled: 'neutral',
+  Expired: 'neutral',
+
+  // Invoices (M3.3/M3.4)
+  Draft: 'neutral',
+  Issued: 'info',
+  Paid: 'success',
+  Overdue: 'danger',
+  Void: 'neutral',
 };
 
 export function StatusBadge({ status }: { status: string }) {

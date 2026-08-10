@@ -1,4 +1,11 @@
-import { Building2, ClipboardList, Users, type LucideIcon } from 'lucide-react';
+import {
+  Building2,
+  ClipboardList,
+  CreditCard,
+  Receipt,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 
 /**
  * The sidebar, filtered against the caller's permissions.
@@ -22,6 +29,8 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Gyms', href: '/gyms', icon: Building2, permission: 'gyms.read' },
+  { label: 'Plans', href: '/plans', icon: CreditCard, permission: 'billing.read' },
+  { label: 'Invoices', href: '/invoices', icon: Receipt, permission: 'billing.read' },
   { label: 'Administrators', href: '/users', icon: Users, permission: 'users.read' },
   { label: 'Audit log', href: '/audit-logs', icon: ClipboardList, permission: 'audit.read' },
 ];
