@@ -1,21 +1,27 @@
 'use client';
 
 import { use } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { CreditCard } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/data/status-badge';
+import { EmptyState } from '@/components/data/empty-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { BrandingForm } from '@/features/gyms/branding-form';
 import { GymForm, type GymFormValues } from '@/features/gyms/gym-form';
 import { GymStatusActions } from '@/features/gyms/gym-status-actions';
-import { gyms } from '@/lib/api/endpoints';
+import { AssignPlanDialog } from '@/features/subscriptions/assign-dialog';
+import { HistoryList } from '@/features/subscriptions/history-list';
+import { SubscriptionActions } from '@/features/subscriptions/subscription-actions';
+import { SubscriptionCard } from '@/features/subscriptions/subscription-card';
+import { gyms, plans, subscriptions } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
 import { usePermission } from '@/lib/auth/session';
 import { formatDateTime } from '@/lib/utils/format';
-import type { GymDetail } from '@/types/api';
+import type { GymDetail, SubscriptionDetail } from '@/types/api';
 
 /**
  * One gym: header with lifecycle actions, then Overview and Branding tabs.
@@ -83,6 +89,7 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
+          <TabsTrigger value="subscription">Subscription</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -102,6 +109,10 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="subscription">
+          <SubscriptionTab gymId={gym.id} />
         </TabsContent>
       </Tabs>
     </>
@@ -194,5 +205,130 @@ function ReadOnlyNotice() {
     <p className="text-muted-foreground text-sm">
       This gym has been deleted; its records are read-only.
     </p>
+  );
+}
+
+/**
+ * The gym's subscription: its current state, the actions its state allows, and its history.
+ *
+ * Background jobs (renewals, failed collection) move a subscription to `PastDue`/`Expired` with no
+ * operator action, so — like the plan detail page — this refetches on window focus rather than only
+ * on mount.
+ *
+ * `subscriptions.get` 404s when the gym has never been assigned a plan; that is not an error to show,
+ * it is the "no subscription yet" state, so it renders `EmptyState` with the same `AssignPlanDialog`
+ * used for a plan change, only its "no subscription" branch offers "Assign plan".
+ */
+function SubscriptionTab({ gymId }: { gymId: string }) {
+  const queryClient = useQueryClient();
+  const canManage = usePermission('subscriptions.manage');
+
+  const subscriptionQuery = useQuery({
+    queryKey: ['subscriptions', 'detail', gymId],
+    queryFn: ({ signal }) => subscriptions.get(gymId, signal),
+    refetchOnWindowFocus: true,
+  });
+
+  const pendingPlanId = subscriptionQuery.data?.pendingChange?.planId ?? null;
+
+  // `PendingPlanChangeDetail` (src/types/api.d.ts) carries only `planId`, not a name — resolved here,
+  // once, via the plan's own detail rather than guessed at in `SubscriptionCard`.
+  const pendingPlanQuery = useQuery({
+    queryKey: ['plans', 'detail', pendingPlanId],
+    queryFn: ({ signal }) => plans.get(pendingPlanId!, signal),
+    enabled: pendingPlanId !== null,
+  });
+
+  const applyUpdated = (updated: SubscriptionDetail) => {
+    queryClient.setQueryData(['subscriptions', 'detail', gymId], updated);
+    void queryClient.invalidateQueries({ queryKey: ['subscriptions', 'history', gymId] });
+  };
+
+  const fail = (error: unknown) => {
+    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+  };
+
+  const resume = useMutation({
+    mutationFn: () => subscriptions.resume(gymId),
+    onSuccess: (updated) => {
+      toast.success('Cancellation withdrawn — the subscription was never not-Active.');
+      applyUpdated(updated);
+    },
+    onError: fail,
+  });
+
+  const convertTrial = useMutation({
+    mutationFn: () => subscriptions.convertTrial(gymId),
+    onSuccess: (updated) => {
+      toast.success('Trial converted to a paid subscription.');
+      applyUpdated(updated);
+    },
+    onError: fail,
+  });
+
+  if (subscriptionQuery.isPending) {
+    return <Skeleton className="h-64 w-full" aria-busy="true" />;
+  }
+
+  if (subscriptionQuery.isError) {
+    const error = subscriptionQuery.error;
+
+    if (error instanceof ApiError && error.isNotFound) {
+      return (
+        <EmptyState
+          icon={CreditCard}
+          title="No subscription"
+          description="This gym has not been assigned a plan yet."
+          action={
+            <AssignPlanDialog
+              gymId={gymId}
+              subscription={null}
+              canManage={canManage}
+              onAssigned={applyUpdated}
+            />
+          }
+        />
+      );
+    }
+
+    return (
+      <p className="text-muted-foreground text-sm">
+        {error instanceof ApiError ? error.message : 'Something went wrong.'}
+      </p>
+    );
+  }
+
+  const subscription = subscriptionQuery.data;
+
+  return (
+    <div className="space-y-4">
+      <SubscriptionCard
+        subscription={subscription}
+        canManage={canManage}
+        pendingPlanName={pendingPlanQuery.data?.name}
+        onResume={subscription.cancelAtPeriodEnd ? () => resume.mutate() : undefined}
+        resuming={resume.isPending}
+        onConvertTrial={
+          subscription.status === 'Trialing' ? () => convertTrial.mutate() : undefined
+        }
+        convertingTrial={convertTrial.isPending}
+      />
+
+      <SubscriptionActions
+        gymId={gymId}
+        subscription={subscription}
+        canManage={canManage}
+        onChanged={applyUpdated}
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>History</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <HistoryList gymId={gymId} />
+        </CardContent>
+      </Card>
+    </div>
   );
 }
