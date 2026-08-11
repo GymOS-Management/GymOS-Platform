@@ -1,6 +1,7 @@
 'use client';
 
 import { use } from 'react';
+import { useRouter } from 'next/navigation';
 import { CreditCard } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -351,6 +352,8 @@ function SubscriptionTab({ gymId }: { gymId: string }) {
  * this refetches on window focus rather than only on mount.
  */
 function InvoicesTab({ gymId }: { gymId: string }) {
+  const router = useRouter();
+
   const query = useQuery({
     queryKey: ['invoices', 'forGym', gymId],
     queryFn: ({ signal }) => invoices.listForGym(gymId, signal),
@@ -370,5 +373,11 @@ function InvoicesTab({ gymId }: { gymId: string }) {
     );
   }
 
-  return <InvoiceTable invoices={query.data} emptyMessage="No invoices for this gym yet" />;
+  return (
+    <InvoiceTable
+      invoices={query.data}
+      emptyMessage="No invoices for this gym yet"
+      onRowClick={(invoice) => router.push(`/invoices/${invoice.id}`)}
+    />
+  );
 }

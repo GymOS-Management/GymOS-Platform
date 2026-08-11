@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { InvoiceTable } from '@/features/invoices/invoice-table';
 
 /**
@@ -44,5 +45,24 @@ describe('InvoiceTable', () => {
     render(<InvoiceTable invoices={[]} emptyMessage="No invoices yet" />);
 
     expect(screen.getByText('No invoices yet')).toBeInTheDocument();
+  });
+
+  /**
+   * `onRowClick` must reach `DataTable` unchanged — that's what makes the whole row (not just a
+   * link inside one cell) navigate, matching every other list in the console. This fails the moment
+   * the prop stops being forwarded, since nothing else in the row would call the spy.
+   */
+  it('calls onRowClick with the clicked invoice', async () => {
+    const onRowClick = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <InvoiceTable invoices={[issuedButOverdue]} emptyMessage="none" onRowClick={onRowClick} />,
+    );
+
+    const table = within(screen.getByRole('table'));
+    await user.click(table.getByRole('row', { name: /INV-2026-000001/i }));
+
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+    expect(onRowClick).toHaveBeenCalledWith(issuedButOverdue);
   });
 });
