@@ -132,13 +132,81 @@ Dashboard/MRR (M5 stats jobs) · Dunning/reminder actions (no consumer yet for `
   traced to `InvoiceNumberGenerator.cs` rather than guessed. `void-dialog.test.tsx`'s near-miss case
   still differs by exactly one character in the real format (`2026-000042` vs. `2026-000041`), so it
   still proves what it always proved: a near-miss leaves the step-up confirmation disabled.
-- **Outstanding: the `/invoices` search placeholder overstates what it does, slightly.** The input reads
-  "Search invoice number or gym…", but `InvoiceEndpoints.cs`'s own doc comment is explicit: `search`
-  matches the invoice number only, not the gym name. Not a defect either E2E journey depends on — both
-  search by invoice number, which works — but a real, small gap between the UI's promise and the
-  backend's contract. Still unfixed: a one-line placeholder edit, or a backend `gymName` filter addition,
-  whichever the next person in that file prefers. Flagged twice now (Task 10's first pass and this
-  review round) so it doesn't quietly become "known behaviour."
+- **Resolved: the `/invoices` search placeholder.** It read "Search invoice number or gym…" while
+  `InvoiceEndpoints.cs` matches the invoice number only. Flagged twice during the increment and finally
+  corrected in the whole-branch fix wave below. Recorded because the gap between a UI's promise and the
+  backend's contract is the kind of thing that quietly becomes "known behaviour" if only ever mentioned
+  in passing.
 - `src/lib/api/client.ts` still holds the access token in a module variable (F1 D3), unchanged by F2 —
   every new endpoint function in `endpoints.ts` goes through the same client, so this constraint (no
   server component can reuse it) applies to billing data exactly as it did to F1's.
+
+## The whole-branch review, and what it found
+
+Every task passed its own review gate before the next began. A final review over the entire branch —
+both repositories, all 22 commits — then found **five Important defects that per-task review could not
+structurally see**, because every one of them lived in a _seam between_ tasks rather than inside one.
+Recorded here because the lesson generalises: task-scoped review verifies each part against its brief
+and cannot notice that two correct parts disagree.
+
+1. **The void dialog discarded what the operator typed.** `onConfirm` took no argument, and the page
+   passed its own copy of `invoiceNumber`, so `X-Confirm-Action` matched by construction and the
+   backend's `invoices.confirmation_mismatch` branch was unreachable from the UI. The step-up guard —
+   AD-6's whole point, and the reason the operator is asked to type anything — had become a `disabled`
+   attribute. Fixed: the typed value is now what travels.
+2. **Voiding an invoice did not settle a `PastDue` subscription in the UI.** The backend runs
+   `PastDueRecovery` on void exactly as it does on mark-paid ("voiding closes an invoice just as surely
+   as paying it"), but only mark-paid invalidated `['subscriptions']`. Two sibling mutations in one
+   file, same problem, different answers.
+3. **Assigning a plan left the gym's Invoices tab claiming "No invoices."** Assign and convert-trial
+   issue an invoice synchronously, but the subscription tab's cache update never invalidated
+   `['invoices']`; switching tabs inside the 15s `staleTime` served the stale empty array. The E2E
+   suite missed it because each test signs in and navigates fresh.
+4. **The plan picker was silently capped at 25** — `plans.list` was called with no `pageSize`, so the
+   26th active plan could not be assigned and nothing on screen said so. Now requests the endpoint's
+   `MaxPageSize` of 200; beyond that it would still truncate.
+5. **A failed plans request rendered "No plans yet"** plus a create call-to-action — telling the operator
+   the catalogue is empty when the truth is the request failed. `invoices/page.tsx`, written in the same
+   increment, already handled this correctly.
+
+All five are fixed and pinned by tests, including one over `invoice-detail.tsx` asserting both mutations
+invalidate both query keys and that `markPaid` receives its arguments in the right order — a transposed
+`rowVersion`/`idempotencyKey` typechecks, since both are strings, and fails only at runtime.
+
+### Parked, with a ruling
+
+`tests/unit/invoice-detail.test.tsx`'s void case carries the comment "Deliberately not the real invoice
+number" — which is **false**: it types the real number, and `VoidDialog`'s own exact-match gate forces
+any value reaching `onConfirm` to equal `invoiceNumber` anyway. The guard _is_ pinned, by
+`void-dialog.test.tsx`'s test catching the actual original defect (`onConfirm` invoked with no
+argument), so this test is redundant rather than false-negative. **The comment should be corrected** —
+a wrong comment in a test outlives the task and misleads whoever trusts it next.
+
+### Follow-ups, deliberately not done at the end of an increment
+
+Each is real, none is urgent, and all were judged too broad to land safely alongside a merge:
+
+- **`toastApiError`.** `error instanceof ApiError ? error.message : 'Something went wrong.'` is copied
+  verbatim six times, and the bare ternary appears 26 times across 17 files as toast text, `description=`
+  and inline JSX. One helper plus a small `ApiErrorText` component removes all of it without inventing
+  an abstraction. This is the one extraction the review judged clearly earned.
+- **Three dialog conventions coexist**: self-contained dialogs that render their own trigger and call the
+  API themselves (`assign-dialog`, `cancel-dialog`); controlled `open`/`onClose`/`onConfirm` dialogs
+  driven by a parent mutation (`mark-paid-dialog`, `void-dialog`); and F1's `ConfirmDialog`
+  (`plan-status-actions`, `subscription-actions`). Only mark-paid's split is forced — the idempotency key
+  must be minted by the parent. Prop names drift with the conventions: `onClose` vs `onOpenChange`,
+  `busy` vs `saving` vs `loading`.
+- **`problems.ts` maps none of the backend's 31 `plans.*` / `subscriptions.*` / `invoices.*` error
+  codes**, so a validation failure shows a generic message instead of highlighting the field. Two have
+  mapped F1 twins worth copying first: `plans.code_taken` (cf. `gyms.slug_taken` → `slug`) and
+  `invoices.confirmation_mismatch` (cf. `gyms.confirmation_mismatch`).
+- **Backend: `If-Match` requiredness has no semantic test.** The OpenAPI snapshot byte-pins all 25 header
+  declarations, so a change fails CI — but nothing asserts that a header's `required` flag _follows_
+  `versionRequired` in the command. The two can drift apart while both files still look right.
+
+### Also worth knowing
+
+Two subagents treated the repo-root `AGENTS.md` as untrusted content and declined to follow it, reading
+its self-describing "written by `next dev`" note as suspicious. It is genuine — `docs/F1-AS-BUILT.md`
+records the same thing, and `node_modules/next/dist/docs/` exists. Review confirmed it changed nothing
+about the edits in question, but expect the instinct to recur.
