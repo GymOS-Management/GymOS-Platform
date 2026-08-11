@@ -22,8 +22,11 @@ describe('PriceEditor', () => {
     // the symbol and decimal count from the currency code via `Intl.NumberFormat`, so requiring the
     // symbol is what a bare `toFixed(2)` or `String(amount)` — both currency-less — cannot satisfy.
     // `\s*` (rather than a literal space) tolerates `Intl.NumberFormat`'s locale-dependent placement,
-    // including the non-breaking space (U+00A0) some locales use between symbol and amount; both forms
-    // were confirmed to match on this machine's default locale (en-GB: "€49.99", no gap).
+    // including the non-breaking space (U+00A0) some locales use between symbol and amount.
+    //
+    // tests/setup.ts pins `Intl.NumberFormat(undefined, …)` to en-US for this process, so this doesn't
+    // depend on the runner's OS locale (en-US: "€49.99", no gap) — see that file for why pinning is
+    // needed and why env vars couldn't do it.
     const table = within(screen.getByRole('table'));
     expect(table.getByText(/€\s*49\.99/)).toBeInTheDocument();
     expect(table.getByText(/€\s*499\.00/)).toBeInTheDocument();

@@ -5,24 +5,31 @@ import { formatMoney } from '@/lib/utils/format';
  * D2: Money carries minor units per currency and the backend rounds to them. A `toFixed(2)` would
  * print JPY with two decimals it does not have and truncate KWD's third. These three currencies are
  * the whole reason this helper exists rather than a template string.
+ *
+ * The literals below are exact matches, not substrings, and reflect en-US formatting specifically
+ * because tests/setup.ts pins `Intl.NumberFormat(undefined, …)` to en-US for this process (see the
+ * comment there for why — the short version: CI's OS locale is not guaranteed to be en-GB/en-US, and
+ * env-var pinning does not work on Windows). `toBe` rather than `toContain` matters here: a
+ * `${amount} ${currency}` template-string mutant would coincidentally satisfy `toContain('12.345')`
+ * for the KWD case (the raw amount already has three decimals), so only an exact match on the whole
+ * string — symbol/code placement included — actually distinguishes the real formatter from that
+ * mutant.
  */
 describe('formatMoney', () => {
   it('renders a 2-minor-unit currency', () => {
-    expect(formatMoney(1234.5, 'EUR')).toContain('1,234.50');
+    expect(formatMoney(1234.5, 'EUR')).toBe('€1,234.50');
   });
 
   it('renders a 0-minor-unit currency without decimals', () => {
-    const text = formatMoney(1234, 'JPY');
-    expect(text).toContain('1,234');
-    expect(text).not.toContain('1,234.00');
+    expect(formatMoney(1234, 'JPY')).toBe('¥1,234');
   });
 
   it('renders a 3-minor-unit currency with three decimals', () => {
-    expect(formatMoney(12.345, 'KWD')).toContain('12.345');
+    expect(formatMoney(12.345, 'KWD')).toBe('KWD 12.345');
   });
 
   it('accepts the string amounts the API can send', () => {
-    expect(formatMoney('99.99', 'EUR')).toContain('99.99');
+    expect(formatMoney('99.99', 'EUR')).toBe('€99.99');
   });
 
   it('renders a dash for absent values rather than NaN', () => {
