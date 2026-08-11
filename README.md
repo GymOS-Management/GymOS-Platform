@@ -5,15 +5,16 @@ Tailwind / shadcn-style components, per the frozen architecture in
 [GymOS-Specification](../GymOS-Specification) (frontend layout: ARCHITECTURE.md §4.2; repository map:
 **ADR-52**).
 
-**Status: F1 complete, awaiting review.** F1 is the frontend share of milestones M0–M2, which the
-backend had run ahead of: sign-in, the authenticated shell, gyms (list, provision, detail, lifecycle,
-branding), administrators (invite, edit, roles, suspend/reactivate), and the audit log. Design and
-rationale: [`docs/F1-DESIGN.md`](docs/F1-DESIGN.md); what changed while building it:
-[`docs/F1-AS-BUILT.md`](docs/F1-AS-BUILT.md).
+**Status: F2 complete, awaiting review.** F2 is the frontend share of M3, the billing milestone: the
+plan catalogue (list, create, detail, prices), a gym's Subscription and Invoices tabs, and the cross-gym
+Invoices list and detail — mark-paid and void included. It builds on F1 (M0–M2): sign-in, the
+authenticated shell, gyms (list, provision, detail, lifecycle, branding), administrators (invite, edit,
+roles, suspend/reactivate), and the audit log. Design and rationale:
+[`docs/F1-DESIGN.md`](docs/F1-DESIGN.md) / [`docs/F2-DESIGN.md`](docs/F2-DESIGN.md); what changed while
+building each: [`docs/F1-AS-BUILT.md`](docs/F1-AS-BUILT.md) / [`docs/F2-AS-BUILT.md`](docs/F2-AS-BUILT.md).
 
-Dashboard, subscriptions, features, monitoring, analytics, and settings are **deliberately absent** —
-each needs a backend module that does not exist yet (M3–M7). A screen with nothing true to show does not
-ship.
+Dashboard, features, monitoring, analytics, and settings are **deliberately absent** — each needs a
+backend module that does not exist yet (M4–M7). A screen with nothing true to show does not ship.
 
 ## Running it
 

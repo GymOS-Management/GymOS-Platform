@@ -25,12 +25,21 @@ ConnectionStrings__Database="Host=localhost;Port=5433;Database=gymos;Username=gy
 Seed__SuperAdmin__Email=e2e@gymos.test \
 Seed__SuperAdmin__Password=e2e-super-admin-password \
 Security__RateLimiting__SignInAttemptsPerWindow=500 \
+Jobs__Enabled=false \
 dotnet run --project src/Host/GymOS.WebApi
 ```
 
 **Why the raised sign-in limit.** Every test signs in fresh, because a fresh session per test is what
 isolation means — and twenty of those trips the production-appropriate limit of 10 per minute per IP.
 The limit is raised on the _test_ instance only; nothing about production config changes.
+
+**Why jobs are disabled (F2 and later).** `billing-journey.spec.ts` asserts on subscription and invoice
+status. The renewal sweep runs every 15 minutes and the overdue sweep hourly (F2-DESIGN.md §9); either
+one firing mid-run could relabel the exact row a test is mid-assertion on — a subscription becoming
+`PastDue`, or a race with an invoice's status — for reasons that have nothing to do with the screen under
+test. `Jobs__Enabled=false` on the _test_ instance removes that source of flakiness deliberately, rather
+than hoping a run finishes inside whatever window the sweeps leave free. Confirm it took effect in the
+backend's own startup log before trusting a long run's results.
 
 The obvious alternative — sign in once and share the session via Playwright's `storageState` — is
 wrong for this backend specifically. The refresh cookie **rotates on every use**, and a replayed one is
@@ -65,5 +74,13 @@ Likewise, prefer a specific error node (`#slug-error`) over `getByRole('alert')`
 docker rm -f gymos-e2e-db
 ```
 
-Each run provisions gyms named `e2e-<project>-<timestamp>` and deletes them. Slugs are never released
-by design, so nothing is reusable between runs — which is why the names carry a timestamp.
+`operator-journey.spec.ts` provisions gyms named `e2e-<project>-<timestamp>` and deletes them as part of
+its own journey. `billing-journey.spec.ts` provisions gyms named `e2e-billing-<project>-<timestamp>` and
+does **not** delete them — nothing in F2 offers gym deletion beyond what F1 already exercises, and slugs
+are never released anyway (F1-AS-BUILT.md), so nothing is gained by adding a teardown step. It also
+creates a plan per run (`E2E_<PROJECT>_<timestamp>`) that is never deleted, because plans structurally
+cannot be (D6, §3.4: `DELETE /plans/{id}` is a 405 by design). Both accumulate in whichever Postgres
+container is running the suite; `docker rm -f` above (with no volume declared) discards all of it along
+with the container. If the same container stays up across many runs instead — the common case while
+iterating on this suite — expect the gym and plan lists to grow with every run; that is the cost of D6,
+not a leak to chase.
