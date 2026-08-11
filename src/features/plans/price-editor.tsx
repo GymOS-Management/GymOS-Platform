@@ -136,14 +136,14 @@ export function PriceEditor({
       render: (price) => price.currency,
     },
     {
-      // `desktopOnly` because the desktop table always renders every column's cell regardless of this
-      // flag — it only controls the mobile card. Keeping the formatted amount out of the mobile card
-      // avoids showing the exact same "€49.99" text twice in the page (once per breakpoint's markup,
-      // both present in the DOM at once since the split is CSS-only), which would otherwise be visible
-      // to a screen reader as a duplicated value even though a sighted user only sees one at a time.
+      // A normal column, on purpose: the price amount is the single most important field on this
+      // screen, so it must render on the mobile card, not just the desktop table. `DataTable` renders
+      // row content twice — once per breakpoint's markup, both present in the DOM at once — and that
+      // duplication is documented, intentional behaviour (docs/F1-AS-BUILT.md), not something to design
+      // around by hiding a column. The corresponding test scopes its query instead of avoiding the
+      // duplication here.
       key: 'amount',
       header: 'Amount',
-      desktopOnly: true,
       render: (price) => formatMoney(price.amount, price.currency),
     },
   ];
