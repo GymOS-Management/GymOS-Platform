@@ -16,3 +16,8 @@ pnpm-lock.yaml
 coverage/
 playwright-report/
 test-results/
+
+# Git-ignored scratch: subagent-driven-development's per-plan workspace (ledger, briefs, reports,
+# review packages). Machine-written, never committed, and read once — formatting it would fail the
+# check on files that are not part of the codebase.
+.superpowers/

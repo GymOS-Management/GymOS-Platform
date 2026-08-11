@@ -68,6 +68,12 @@ interface RequestOptions {
   precondition?: string | true;
   /** AD-6 step-up confirmation, sent as `X-Confirm-Action`. */
   confirmation?: string;
+  /**
+   * AD-39, sent as `Idempotency-Key`. Mint it when the operator commits to the action, never inside
+   * the request: `send` retries after a refresh, and a key regenerated per attempt would present the
+   * backend with a second intent rather than a retry of the first — defeating the mechanism.
+   */
+  idempotencyKey?: string;
   /** Skip the refresh-and-retry dance. Used by the auth calls themselves, to avoid recursion. */
   anonymous?: boolean;
   signal?: AbortSignal;
@@ -147,6 +153,10 @@ async function send(path: string, options: RequestOptions, isRetry = false): Pro
 
   if (options.confirmation) {
     headers['X-Confirm-Action'] = options.confirmation;
+  }
+
+  if (options.idempotencyKey) {
+    headers['Idempotency-Key'] = options.idempotencyKey;
   }
 
   const response = await fetch(`${API_ROOT}${path}`, {
