@@ -45,3 +45,25 @@ Intl.NumberFormat = new Proxy(OriginalNumberFormat, {
     return Reflect.construct(target, substituteUndefinedLocale(args));
   },
 }) as typeof Intl.NumberFormat;
+
+/**
+ * jsdom implements neither the Pointer Events capture methods nor `scrollIntoView`. Radix UI's
+ * `Select` (src/components/ui/select.tsx) calls `hasPointerCapture`/`setPointerCapture` on pointerdown
+ * and `scrollIntoView` when it highlights an item, so opening a `Select` under jsdom throws
+ * `TypeError: target.hasPointerCapture is not a function` with no polyfill — not a bug in the
+ * component, purely an environment gap between jsdom and a real browser. Stubbed as no-ops: the tests
+ * that open a `Select` (tests/unit/assign-dialog.test.tsx) only assert on which options render, never
+ * on actual pointer-capture or scroll behaviour.
+ */
+if (!Element.prototype.hasPointerCapture) {
+  Element.prototype.hasPointerCapture = () => false;
+}
+if (!Element.prototype.setPointerCapture) {
+  Element.prototype.setPointerCapture = () => {};
+}
+if (!Element.prototype.releasePointerCapture) {
+  Element.prototype.releasePointerCapture = () => {};
+}
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
