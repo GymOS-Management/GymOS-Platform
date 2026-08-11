@@ -8,17 +8,18 @@ describe('VoidDialog', () => {
   it('stays disabled until the invoice number is typed exactly', async () => {
     const onConfirm = vi.fn();
     render(
-      <VoidDialog open invoiceNumber="INV-2026-000042" onConfirm={onConfirm} onClose={() => {}} />,
+      <VoidDialog open invoiceNumber="2026-000042" onConfirm={onConfirm} onClose={() => {}} />,
     );
 
     const confirm = screen.getByRole('button', { name: /void invoice/i });
     expect(confirm).toBeDisabled();
 
-    await userEvent.type(screen.getByLabelText(/invoice number/i), 'INV-2026-000041');
+    // Off by one character (the last digit) — a near-miss must still leave the button disabled.
+    await userEvent.type(screen.getByLabelText(/invoice number/i), '2026-000041');
     expect(confirm).toBeDisabled();
 
     await userEvent.clear(screen.getByLabelText(/invoice number/i));
-    await userEvent.type(screen.getByLabelText(/invoice number/i), 'INV-2026-000042');
+    await userEvent.type(screen.getByLabelText(/invoice number/i), '2026-000042');
     expect(confirm).toBeEnabled();
   });
 });

@@ -10,7 +10,7 @@ import { InvoiceTable } from '@/features/invoices/invoice-table';
  */
 const issuedButOverdue = {
   id: 'i1',
-  invoiceNumber: 'INV-2026-000001',
+  invoiceNumber: '2026-000001',
   gymId: 'g1',
   gymName: 'Downtown',
   status: 'Issued',
@@ -60,7 +60,7 @@ describe('InvoiceTable', () => {
     );
 
     const table = within(screen.getByRole('table'));
-    await user.click(table.getByRole('row', { name: /INV-2026-000001/i }));
+    await user.click(table.getByRole('row', { name: /2026-000001/i }));
 
     expect(onRowClick).toHaveBeenCalledTimes(1);
     expect(onRowClick).toHaveBeenCalledWith(issuedButOverdue);

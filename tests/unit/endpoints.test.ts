@@ -42,9 +42,9 @@ describe('invoices.void', () => {
   it('sends the invoice number as the step-up confirmation', async () => {
     fetchMock.mockResolvedValueOnce(ok());
 
-    await invoices.void('inv-1', 'INV-2026-000042', 'row-1');
+    await invoices.void('inv-1', '2026-000042', 'row-1');
 
-    expect(headersOf(0)['X-Confirm-Action']).toBe('INV-2026-000042');
+    expect(headersOf(0)['X-Confirm-Action']).toBe('2026-000042');
     expect(headersOf(0)['If-Match']).toBe('"row-1"');
   });
 });

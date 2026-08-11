@@ -39,10 +39,11 @@ Two things worth recording about writing it, not about the app:
   what this task's "investigate before you weaken the test" instruction was for. It was the test, not
   the screens; the fix is in the regex, not in any loosened assertion.
 - **The real invoice number format is `{year}-{sequence:D6}` (e.g. `2026-000001`), not `INV-{...}`.**
-  Tasks 7–9's unit-test fixtures used `INV-2026-000001` as a plausible-looking placeholder, which is
-  fine in an isolated unit test but would have silently never matched anything against a real backend.
-  Traced to `InvoiceNumberGenerator.cs` before writing the capture regex, rather than discovering it via
-  a failed assertion.
+  Tasks 7–9's unit-test fixtures had used `INV-2026-000001` as a plausible-looking placeholder — harmless
+  in an isolated unit test's own logic, but a small lie that would have misled the next reader about
+  what the API actually returns. Traced the real format to `InvoiceNumberGenerator.cs` before writing
+  this journey's capture regex, rather than discovering it via a failed assertion, and corrected the
+  three unit-test fixtures to match during this task's review round (see "Resolved", below).
 
 ## Decisions taken while building
 
@@ -115,18 +116,29 @@ Dashboard/MRR (M5 stats jobs) · Dunning/reminder actions (no consumer yet for `
   optional for a trustworthy run once F2's screens are in the mix — the renewal sweep (15 min) and
   overdue sweep (hourly) touch exactly the rows both E2E journeys assert on. This session's backend was
   supplied already configured; the README now documents the full startup command including that flag
-  so a future run can reproduce it without being told twice.
+  so a future run can reproduce it without being told twice. **Confirmed, not just configured:** the
+  controller verified it directly from the running instance's own log before dispatching this task —
+  `Job host disabled by configuration (Jobs:Enabled=false); no jobs will run in this process.` — so this
+  is not an assumption carried forward from the brief.
 - **Plans cannot be deleted (D6) and gym slugs are never released (F1-AS-BUILT.md).** Both E2E specs
   therefore generate a unique code/slug per run and per project, and neither cleans up afterward for
   plans (there is nothing to call) or for the billing journey's own gym (nothing new to exercise by
   deleting it — F1's operator journey already covers gym deletion). A long-lived shared test database
   will accumulate plans and gyms across every run; that is the expected cost of D6, not a leak.
-- **The `/invoices` search placeholder overstates what it does, slightly.** The input reads "Search
-  invoice number or gym…", but `InvoiceEndpoints.cs`'s own doc comment is explicit: `search` matches the
-  invoice number only, not the gym name. Not a defect this task's journey depends on — it searches by
-  invoice number, which works — but worth a one-line copy fix or a backend `gymName` filter addition
-  whenever someone is next in that file. Left unfixed here because Task 10's brief is the E2E journey
-  and the as-built record, not a sweep of every screen's copy.
+- **Resolved: the fictional `INV-`-prefixed invoice-number fixtures.** Tasks 7–9's unit tests
+  (`tests/unit/endpoints.test.ts`, `void-dialog.test.tsx`, `invoice-table.test.tsx`) used
+  `INV-2026-000042`-shaped values as plausible-looking placeholders. Corrected during this task's review
+  round to the real generator's format, `{year}-{sequence:D6}` with no prefix (e.g. `2026-000042`) —
+  traced to `InvoiceNumberGenerator.cs` rather than guessed. `void-dialog.test.tsx`'s near-miss case
+  still differs by exactly one character in the real format (`2026-000042` vs. `2026-000041`), so it
+  still proves what it always proved: a near-miss leaves the step-up confirmation disabled.
+- **Outstanding: the `/invoices` search placeholder overstates what it does, slightly.** The input reads
+  "Search invoice number or gym…", but `InvoiceEndpoints.cs`'s own doc comment is explicit: `search`
+  matches the invoice number only, not the gym name. Not a defect either E2E journey depends on — both
+  search by invoice number, which works — but a real, small gap between the UI's promise and the
+  backend's contract. Still unfixed: a one-line placeholder edit, or a backend `gymName` filter addition,
+  whichever the next person in that file prefers. Flagged twice now (Task 10's first pass and this
+  review round) so it doesn't quietly become "known behaviour."
 - `src/lib/api/client.ts` still holds the access token in a module variable (F1 D3), unchanged by F2 —
   every new endpoint function in `endpoints.ts` goes through the same client, so this constraint (no
   server component can reuse it) applies to billing data exactly as it did to F1's.

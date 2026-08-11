@@ -203,7 +203,11 @@ test.describe.serial('billing journey', () => {
     // exactly the one row regardless of how many invoices other runs have left behind.
     await visibleText(page, invoice.number).first().click();
 
-    await expect(page).toHaveURL(/\/invoices\/[^/]+$/);
+    // Same GUID anchor as the plan-id capture above, for the same reason: `[^/]+$` would also match
+    // a static route this app doesn't currently have (there's no `/invoices/new`), but that's a fact
+    // about today's routing, not about this regex — anchoring on the id's actual shape makes the
+    // assertion correct regardless of what routes get added later.
+    await expect(page).toHaveURL(new RegExp(`/invoices/${GUID_PATH_SEGMENT.source}`, 'i'));
     invoice.id = page.url().split('/').pop()!;
 
     const heading = page.getByRole('heading', { name: new RegExp(invoice.number) });
