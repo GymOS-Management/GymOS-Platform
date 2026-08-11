@@ -33,7 +33,7 @@ export function VoidDialog({
 }: {
   open: boolean;
   invoiceNumber: string;
-  onConfirm: () => Promise<void>;
+  onConfirm: (typed: string) => Promise<void>;
   onClose: () => void;
 }) {
   const [typed, setTyped] = useState('');
@@ -47,7 +47,7 @@ export function VoidDialog({
   const submit = async () => {
     setBusy(true);
     try {
-      await onConfirm();
+      await onConfirm(typed);
       setTyped('');
     } finally {
       setBusy(false);

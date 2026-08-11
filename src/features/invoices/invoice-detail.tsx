@@ -77,6 +77,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     onSuccess: (updated) => {
       queryClient.setQueryData(['invoices', 'detail', updated.id], updated);
       void queryClient.invalidateQueries({ queryKey: ['invoices'] });
+      // Voiding the last open invoice of the current period settles a PastDue subscription
+      // server-side (PastDueRecovery runs on this path too), so the subscription card is stale
+      // the moment this succeeds — same reasoning as markPaid's invalidation above.
+      void queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
       toast.success('Invoice voided.');
       setDialog(null);
     },
@@ -88,8 +92,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     await markPaid.mutateAsync({ paymentReference, idempotencyKey: newIdempotencyKey() });
   }
 
-  async function handleVoid(): Promise<void> {
-    await voidInvoice.mutateAsync(query.data!.invoiceNumber);
+  async function handleVoid(typed: string): Promise<void> {
+    await voidInvoice.mutateAsync(typed);
   }
 
   if (query.isPending) {
@@ -225,8 +229,15 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** `taxRate` arrives as a fraction (e.g. `0.19`); shown as a percentage for a human reading an invoice. */
+/** `taxRate` arrives as a fraction (e.g. `0.075`); shown as a percentage for a human reading an invoice. */
 function formatPercent(rate: number | string): string {
   const value = typeof rate === 'string' ? Number(rate) : rate;
-  return Number.isFinite(value) ? `${(value * 100).toFixed(0)}%` : '—';
+  if (!Number.isFinite(value)) {
+    return '—';
+  }
+  // Render the real rate (e.g. 7.5%), not a rounded one — this figure sits next to an exact amount
+  // on a financial document.
+  const percent = value * 100;
+  const rounded = Math.round(percent * 100) / 100;
+  return `${rounded}%`;
 }

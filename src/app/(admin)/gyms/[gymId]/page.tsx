@@ -249,6 +249,12 @@ function SubscriptionTab({ gymId }: { gymId: string }) {
   const applyUpdated = (updated: SubscriptionDetail) => {
     queryClient.setQueryData(['subscriptions', 'detail', gymId], updated);
     void queryClient.invalidateQueries({ queryKey: ['subscriptions', 'history', gymId] });
+    // Assigning a plan and converting a trial both issue an invoice synchronously server-side, so
+    // this gym's invoice list (and the cross-gym one) is stale the moment this succeeds. `applyUpdated`
+    // is the shared success handler for every subscription mutation on this tab, so invalidating here
+    // covers assign/convert-trial without having to track which other mutations might one day issue
+    // an invoice too.
+    void queryClient.invalidateQueries({ queryKey: ['invoices'] });
   };
 
   const fail = (error: unknown) => {

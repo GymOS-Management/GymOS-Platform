@@ -79,6 +79,24 @@ describe('AssignPlanDialog', () => {
     getMock.mockResolvedValue(planDetailEurOnly);
   });
 
+  /**
+   * Fix 4 (whole-branch review): `plans.list` defaults to a 25-row page; with no explicit `pageSize`
+   * a 26th active plan silently could not be assigned. Pins the picker's request against the API's
+   * documented ceiling (`PagedResult.MaxPageSize` = 200, GymOS-Backend) rather than letting a future
+   * edit drop the parameter again unnoticed.
+   */
+  it('asks for a full page of assignable plans, not the default 25', async () => {
+    const user = userEvent.setup();
+    renderDialog();
+
+    await user.click(screen.getByRole('button', { name: 'Assign plan' }));
+
+    expect(listMock).toHaveBeenCalledWith(
+      { includeInactive: false, pageSize: 200 },
+      expect.anything(),
+    );
+  });
+
   it('limits the currency picker to the currencies the chosen plan actually prices', async () => {
     const user = userEvent.setup();
     renderDialog();

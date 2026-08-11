@@ -66,7 +66,7 @@ export default function InvoicesPage() {
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
         <Input
           type="search"
-          placeholder="Search invoice number or gym…"
+          placeholder="Search invoice number…"
           value={search}
           onChange={(event) => {
             setSearch(event.target.value);

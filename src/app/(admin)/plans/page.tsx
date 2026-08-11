@@ -13,6 +13,7 @@ import { StatusBadge } from '@/components/data/status-badge';
 import { PageHeader } from '@/components/layout/page-header';
 import { useDebounced } from '@/hooks/use-debounced';
 import { plans } from '@/lib/api/endpoints';
+import { ApiError } from '@/lib/api/problems';
 import { RequirePermission } from '@/lib/auth/session';
 import type { PlanListItem } from '@/types/api';
 
@@ -121,43 +122,51 @@ export default function PlansPage() {
         </label>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={query.data?.items}
-        rowKey={(plan) => plan.id}
-        loading={query.isPending}
-        onRowClick={(plan) => router.push(`/plans/${plan.id}`)}
-        empty={
-          hasFilters ? (
-            <EmptyState
-              icon={CreditCard}
-              title="No plans match these filters"
-              description="Try a different search, or include withdrawn plans."
-            />
-          ) : (
-            <EmptyState
-              icon={CreditCard}
-              title="No plans yet"
-              description="Create the first plan to start building the catalogue."
-              action={
-                <RequirePermission permission="billing.manage">
-                  <Button asChild variant="outline">
-                    <Link href="/plans/new">New plan</Link>
-                  </Button>
-                </RequirePermission>
-              }
-            />
-          )
-        }
-      />
+      {query.isError ? (
+        <p className="text-muted-foreground text-sm">
+          {query.error instanceof ApiError ? query.error.message : 'Something went wrong.'}
+        </p>
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            rows={query.data?.items}
+            rowKey={(plan) => plan.id}
+            loading={query.isPending}
+            onRowClick={(plan) => router.push(`/plans/${plan.id}`)}
+            empty={
+              hasFilters ? (
+                <EmptyState
+                  icon={CreditCard}
+                  title="No plans match these filters"
+                  description="Try a different search, or include withdrawn plans."
+                />
+              ) : (
+                <EmptyState
+                  icon={CreditCard}
+                  title="No plans yet"
+                  description="Create the first plan to start building the catalogue."
+                  action={
+                    <RequirePermission permission="billing.manage">
+                      <Button asChild variant="outline">
+                        <Link href="/plans/new">New plan</Link>
+                      </Button>
+                    </RequirePermission>
+                  }
+                />
+              )
+            }
+          />
 
-      {query.data && (
-        <Pagination
-          page={page}
-          pageSize={PAGE_SIZE}
-          totalCount={query.data.totalCount}
-          onPageChange={setPage}
-        />
+          {query.data && (
+            <Pagination
+              page={page}
+              pageSize={PAGE_SIZE}
+              totalCount={query.data.totalCount}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
     </>
   );

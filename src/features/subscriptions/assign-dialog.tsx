@@ -24,6 +24,11 @@ import { plans, subscriptions } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
 import type { SubscriptionDetail } from '@/types/api';
 
+// `plans.list` defaults to a 25-row page; the API caps `pageSize` at 200 (`PagedResult.MaxPageSize`,
+// GymOS-Backend), so this asks for that ceiling rather than letting a 26th active plan become
+// unreachable from this picker with nothing on screen explaining why.
+const PLAN_PAGE_SIZE = 200;
+
 /**
  * Assigns a plan to a gym for the first time, or changes the plan a gym is already on — one dialog,
  * because both submit the same request (`subscriptions.assign`, D5: no precondition, no read-then-write
@@ -53,7 +58,8 @@ export function AssignPlanDialog({
 
   const plansQuery = useQuery({
     queryKey: ['plans', 'list', 'assignable'],
-    queryFn: ({ signal }) => plans.list({ includeInactive: false }, signal),
+    queryFn: ({ signal }) =>
+      plans.list({ includeInactive: false, pageSize: PLAN_PAGE_SIZE }, signal),
     enabled: open,
   });
 

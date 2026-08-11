@@ -61,7 +61,7 @@ export function SubscriptionActions({
         />
 
         {canManage && canCancel && !subscription.cancelAtPeriodEnd && (
-          <CancelSubscriptionDialog gymId={gymId} canManage onCanceled={onChanged} />
+          <CancelSubscriptionDialog gymId={gymId} canManage={canManage} onCanceled={onChanged} />
         )}
 
         {canManage && subscription.status === 'Active' && (
