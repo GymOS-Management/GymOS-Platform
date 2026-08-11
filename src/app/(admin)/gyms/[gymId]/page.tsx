@@ -13,11 +13,12 @@ import { PageHeader } from '@/components/layout/page-header';
 import { BrandingForm } from '@/features/gyms/branding-form';
 import { GymForm, type GymFormValues } from '@/features/gyms/gym-form';
 import { GymStatusActions } from '@/features/gyms/gym-status-actions';
+import { InvoiceTable } from '@/features/invoices/invoice-table';
 import { AssignPlanDialog } from '@/features/subscriptions/assign-dialog';
 import { HistoryList } from '@/features/subscriptions/history-list';
 import { SubscriptionActions } from '@/features/subscriptions/subscription-actions';
 import { SubscriptionCard } from '@/features/subscriptions/subscription-card';
-import { gyms, plans, subscriptions } from '@/lib/api/endpoints';
+import { gyms, invoices, plans, subscriptions } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
 import { usePermission } from '@/lib/auth/session';
 import { formatDateTime } from '@/lib/utils/format';
@@ -90,6 +91,7 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
+          <TabsTrigger value="invoices">Invoices</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -113,6 +115,10 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
 
         <TabsContent value="subscription">
           <SubscriptionTab gymId={gym.id} />
+        </TabsContent>
+
+        <TabsContent value="invoices">
+          <InvoicesTab gymId={gym.id} />
         </TabsContent>
       </Tabs>
     </>
@@ -331,4 +337,38 @@ function SubscriptionTab({ gymId }: { gymId: string }) {
       </Card>
     </div>
   );
+}
+
+/**
+ * This gym's invoices, via `InvoiceTable` — the same presentational component Task 9 reuses for the
+ * cross-gym list.
+ *
+ * `invoices.listForGym` answers an unknown gym with an empty array rather than a 404 (M3.3/M3.4), so
+ * there is no not-found branch here — an empty list is the truthful "no invoices" state either way,
+ * which `InvoiceTable`'s own empty message covers.
+ *
+ * The hourly overdue sweep relabels invoices with no operator action, so — like the Subscription tab —
+ * this refetches on window focus rather than only on mount.
+ */
+function InvoicesTab({ gymId }: { gymId: string }) {
+  const query = useQuery({
+    queryKey: ['invoices', 'forGym', gymId],
+    queryFn: ({ signal }) => invoices.listForGym(gymId, signal),
+    refetchOnWindowFocus: true,
+  });
+
+  if (query.isPending) {
+    return <Skeleton className="h-64 w-full" aria-busy="true" />;
+  }
+
+  if (query.isError) {
+    const error = query.error;
+    return (
+      <p className="text-muted-foreground text-sm">
+        {error instanceof ApiError ? error.message : 'Something went wrong.'}
+      </p>
+    );
+  }
+
+  return <InvoiceTable invoices={query.data} emptyMessage="No invoices for this gym yet" />;
 }
