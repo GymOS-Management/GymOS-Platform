@@ -19,14 +19,14 @@ Twenty operations, all shipped and contract-frozen — the same count F1 consume
 
 ### In
 
-| Screen                                     | Route                       | API it consumes                                                                              | Why it earns its place                                                     |
-| ------------------------------------------ | --------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **Plans list**                             | `/plans`                    | `GET /plans` (page, search, `includeInactive`, `isPublic`)                                    | Nothing can be sold until something is priced.                             |
-| **Plan create**                            | `/plans/new`                | `POST /plans`                                                                                | Today a new plan needs a developer.                                        |
-| **Plan detail** — Overview + Prices tabs   | `/plans/{planId}`           | `GET/PUT /plans/{id}`, `activate`, `deactivate`, `PUT/DELETE .../prices`                     | Repricing is the routine commercial act.                                   |
-| **Gym detail → Subscription tab**          | `/gyms/{gymId}`             | `GET/PUT .../subscription`, `cancel`, `resume`, `convert-trial`, `payment-state`, `history`  | M3.2's named deliverable, on the screen the operator already has open.     |
-| **Gym detail → Invoices tab**              | `/gyms/{gymId}`             | `GET /gyms/{id}/invoices`                                                                    | "What does this gym owe?" asked where the gym is.                          |
-| **Invoices list + detail**                 | `/invoices`, `/invoices/{id}` | `GET /invoices` (status, `gymId`, `overdue`), `GET /invoices/{id}`, `mark-paid`, `void`     | The cross-gym collections view; per-gym alone cannot answer "who is late?" |
+| Screen                                   | Route                         | API it consumes                                                                             | Why it earns its place                                                     |
+| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **Plans list**                           | `/plans`                      | `GET /plans` (page, search, `includeInactive`, `isPublic`)                                  | Nothing can be sold until something is priced.                             |
+| **Plan create**                          | `/plans/new`                  | `POST /plans`                                                                               | Today a new plan needs a developer.                                        |
+| **Plan detail** — Overview + Prices tabs | `/plans/{planId}`             | `GET/PUT /plans/{id}`, `activate`, `deactivate`, `PUT/DELETE .../prices`                    | Repricing is the routine commercial act.                                   |
+| **Gym detail → Subscription tab**        | `/gyms/{gymId}`               | `GET/PUT .../subscription`, `cancel`, `resume`, `convert-trial`, `payment-state`, `history` | M3.2's named deliverable, on the screen the operator already has open.     |
+| **Gym detail → Invoices tab**            | `/gyms/{gymId}`               | `GET /gyms/{id}/invoices`                                                                   | "What does this gym owe?" asked where the gym is.                          |
+| **Invoices list + detail**               | `/invoices`, `/invoices/{id}` | `GET /invoices` (status, `gymId`, `overdue`), `GET /invoices/{id}`, `mark-paid`, `void`     | The cross-gym collections view; per-gym alone cannot answer "who is late?" |
 
 ### Out, and why
 
@@ -47,11 +47,11 @@ generated client would.**
 
 Three headers are enforced by the pipeline and documented only in prose:
 
-| Header             | Enforced by                              | Failure without it                       | Declared? |
-| ------------------ | ---------------------------------------- | ---------------------------------------- | --------- |
-| `Idempotency-Key`  | `IdempotencyHeaderMiddleware` (AD-39)    | `400 idempotency.key_required`           | No        |
-| `If-Match`         | `versionRequired: true` in the command    | `428` on the five PUTs; optional elsewhere (D5) | No        |
-| `X-Confirm-Action` | `ConfirmationHeaders` (AD-6)             | `invoices.confirmation_mismatch` on void | No        |
+| Header             | Enforced by                            | Failure without it                              | Declared? |
+| ------------------ | -------------------------------------- | ----------------------------------------------- | --------- |
+| `Idempotency-Key`  | `IdempotencyHeaderMiddleware` (AD-39)  | `400 idempotency.key_required`                  | No        |
+| `If-Match`         | `versionRequired: true` in the command | `428` on the five PUTs; optional elsewhere (D5) | No        |
+| `X-Confirm-Action` | `ConfirmationHeaders` (AD-6)           | `invoices.confirmation_mismatch` on void        | No        |
 
 All three are in F2's own surface, not borrowed from elsewhere: `POST /invoices/{id}/mark-paid` alone
 requires the first two, and `POST /invoices/{id}/void` requires the second and third.
@@ -104,11 +104,11 @@ the sweeps onto the database clock for the same reason; the client has even less
 a commercial authority, not day-to-day administration. `subscriptions.manage` is separate again —
 deciding what to sell and deciding what one customer pays are different powers.
 
-| Capability                                            | Permission             |
-| ----------------------------------------------------- | ---------------------- |
-| See plans and invoices                                | `billing.read`         |
-| Create/edit/price/activate plans; mark-paid; void     | `billing.manage`       |
-| Assign, cancel, resume, convert trial, payment state  | `subscriptions.manage` |
+| Capability                                           | Permission             |
+| ---------------------------------------------------- | ---------------------- |
+| See plans and invoices                               | `billing.read`         |
+| Create/edit/price/activate plans; mark-paid; void    | `billing.manage`       |
+| Assign, cancel, resume, convert trial, payment state | `subscriptions.manage` |
 
 Per F1's standing rule, `usePermission()` hides UI and never authorizes — the API re-checks every call.
 
@@ -238,14 +238,14 @@ the gate working.
 
 ## 8. Deferred, with the dependency each waits on
 
-| Deferred                        | Waits on                                     |
-| ------------------------------- | -------------------------------------------- |
-| Dashboard / MRR                 | M5 stats jobs                                |
-| Dunning / reminder actions      | a consumer for `invoice.became_overdue`      |
-| Manual invoice creation         | a producer for `Draft`                       |
-| Feature-flag filtering          | M4                                           |
-| `/navigation`-driven sidebar    | `IModule` manifest loader (F1 D9)            |
-| Devices tab                     | M6                                           |
+| Deferred                     | Waits on                                |
+| ---------------------------- | --------------------------------------- |
+| Dashboard / MRR              | M5 stats jobs                           |
+| Dunning / reminder actions   | a consumer for `invoice.became_overdue` |
+| Manual invoice creation      | a producer for `Draft`                  |
+| Feature-flag filtering       | M4                                      |
+| `/navigation`-driven sidebar | `IModule` manifest loader (F1 D9)       |
+| Devices tab                  | M6                                      |
 
 ## 9. Risks
 
