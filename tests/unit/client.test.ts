@@ -282,3 +282,48 @@ describe('query()', () => {
     expect(query({})).toBe('');
   });
 });
+
+describe('idempotency key (D1)', () => {
+  it('sends the key it is given as Idempotency-Key', async () => {
+    setAccessToken('token');
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await api.post('/invoices/abc/mark-paid', undefined, { idempotencyKey: 'key-1' });
+
+    expect(headersOfCall(0)['Idempotency-Key']).toBe('key-1');
+  });
+
+  it('sends no header when none is given, so ordinary posts are unaffected', async () => {
+    setAccessToken('token');
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await api.post('/gyms/abc/activate');
+
+    expect(headersOfCall(0)['Idempotency-Key']).toBeUndefined();
+  });
+
+  /**
+   * The point of the whole mechanism. The client retries once after a refresh; if that retry carried
+   * a fresh key the backend would treat it as a second payment, which is precisely what AD-39 exists
+   * to prevent.
+   */
+  it('reuses the same key on the post-refresh retry', async () => {
+    setAccessToken('stale');
+    fetchMock
+      .mockResolvedValueOnce(problemResponse(401, 'auth.unauthorized'))
+      .mockResolvedValueOnce(jsonResponse({ accessToken: 'fresh' }))
+      .mockResolvedValueOnce(jsonResponse({ ok: true }));
+
+    await api.post('/invoices/abc/mark-paid', undefined, { idempotencyKey: 'key-2' });
+
+    expect(headersOfCall(0)['Idempotency-Key']).toBe('key-2');
+    expect(headersOfCall(2)['Idempotency-Key']).toBe('key-2');
+  });
+});
+
+describe('newIdempotencyKey', () => {
+  it('differs between intents', async () => {
+    const { newIdempotencyKey } = await import('@/lib/billing/idempotency');
+    expect(newIdempotencyKey()).not.toBe(newIdempotencyKey());
+  });
+});
