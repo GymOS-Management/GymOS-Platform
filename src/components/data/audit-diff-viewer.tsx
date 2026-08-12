@@ -1,4 +1,6 @@
+import { describeFieldName, isIsoInstant } from '@/lib/utils/audit';
 import { cn } from '@/lib/utils/cn';
+import { formatDateTime } from '@/lib/utils/format';
 
 /**
  * Before/after view of one audit entry's captured values.
@@ -37,6 +39,21 @@ function ValueCell({ value }: { value: unknown }) {
     return (
       <span className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-mono text-xs">
         redacted
+      </span>
+    );
+  }
+
+  if (typeof value === 'boolean') {
+    return <span className="text-xs">{value ? 'Yes' : 'No'}</span>;
+  }
+
+  // A stored instant is read as a date, not as a 33-character string that wraps mid-value. The raw
+  // value stays on hover: this screen's job is to show exactly what was captured, so the formatted
+  // reading is an addition to it rather than a replacement.
+  if (typeof value === 'string' && isIsoInstant(value)) {
+    return (
+      <span className="text-xs" title={value}>
+        {formatDateTime(value)}
       </span>
     );
   }
@@ -83,7 +100,11 @@ export function AuditDiffViewer({
                 changed && 'bg-amber-50/50 dark:bg-amber-950/20',
               )}
             >
-              <span className="text-xs font-medium sm:self-center">{key}</span>
+              {/* The readable name, with the stored property name on hover — the latter is what
+                  matches the code and the API, so it stays reachable rather than being replaced. */}
+              <span className="text-xs font-medium sm:self-center" title={key}>
+                {describeFieldName(key)}
+              </span>
               <div className="pl-2 sm:pl-0">
                 <span className="text-muted-foreground mr-1 text-xs sm:hidden">before:</span>
                 <ValueCell value={before?.[key]} />

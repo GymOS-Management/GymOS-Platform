@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { dashboard } from '@/lib/api/endpoints';
+import { describeAuditAction, describeEntityType } from '@/lib/utils/audit';
 import { formatDateTime } from '@/lib/utils/format';
 
 const ENTRY_LIMIT = 20;
@@ -52,9 +53,14 @@ export function ActivityFeed() {
                 key={`${entry.occurredAtUtc}-${entry.action}-${index}`}
                 className="flex flex-col gap-0.5 py-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
               >
+                {/* Same reading as the audit log's own list — this feed is that trail in a trimmed
+                    shape, and humanising one screen while leaving the other in machine codes would
+                    make them look like different things. */}
                 <span className="min-w-0 text-sm">
-                  <span className="font-medium">{entry.action}</span>{' '}
-                  <span className="text-muted-foreground">{entry.entityType}</span>
+                  <span className="font-medium">{describeAuditAction(entry.action)}</span>{' '}
+                  <span className="text-muted-foreground">
+                    {describeEntityType(entry.entityType)}
+                  </span>
                 </span>
                 <span className="text-muted-foreground shrink-0 text-xs">
                   {/* Sign-in rows carry no user id by design — at sign-in the caller is not yet

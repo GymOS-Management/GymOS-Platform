@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/data/empty-state';
 import { PageHeader } from '@/components/layout/page-header';
 import { useDebounced } from '@/hooks/use-debounced';
 import { auditLogs } from '@/lib/api/endpoints';
+import { describeAuditAction, describeEntityType, shortId } from '@/lib/utils/audit';
 import { formatDateTime } from '@/lib/utils/format';
 import type { AuditLogListItem } from '@/types/api';
 
@@ -48,18 +49,65 @@ export default function AuditLogsPage() {
       key: 'action',
       header: 'Action',
       primary: true,
-      render: (entry) => <span className="font-mono text-xs">{entry.action}</span>,
+      // The sentence first, the code under it. The code stays because it is what the filter above
+      // matches and what an operator quotes; it just stops being the only thing on offer.
+      render: (entry) => (
+        <span className="flex flex-col">
+          <span className="font-medium">{describeAuditAction(entry.action)}</span>
+          <span className="text-muted-foreground font-mono text-xs">{entry.action}</span>
+        </span>
+      ),
     },
     {
       key: 'userEmail',
       header: 'By',
-      render: (entry) => entry.userEmail ?? <span className="text-muted-foreground">system</span>,
+      render: (entry) =>
+        entry.userEmail ?? (
+          // "System" rather than "system", and titled: a null actor is not an anonymous mystery, it
+          // is a background job or a step that ran before anyone was authenticated (a sign-in stamps
+          // the user's own row before the caller has an identity).
+          <span
+            className="text-muted-foreground"
+            title="No signed-in user — a background job or a pre-authentication step"
+          >
+            System
+          </span>
+        ),
     },
     {
       key: 'entityType',
-      header: 'Entity',
+      header: 'Subject',
       desktopOnly: true,
-      render: (entry) => entry.entityType ?? '—',
+      // Which thing, not just what kind of thing. The type alone could not tell two gyms apart, so
+      // the id's first segment rides along — enough to spot the rows that share a subject.
+      render: (entry) => {
+        const type = describeEntityType(entry.entityType);
+        const id = shortId(entry.entityId);
+
+        if (!type) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+
+        return (
+          <span className="flex flex-col">
+            <span>{type}</span>
+            {id && <span className="text-muted-foreground font-mono text-xs">{id}…</span>}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'ipAddress',
+      header: 'From',
+      desktopOnly: true,
+      // Already carried by the API and previously dropped on the floor. On a trail whose job is
+      // answering "who did this", where they did it from is half the question.
+      render: (entry) =>
+        entry.ipAddress ? (
+          <span className="font-mono text-xs">{entry.ipAddress}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     {
       key: 'createdAtUtc',
@@ -118,6 +166,15 @@ export default function AuditLogsPage() {
   );
 }
 
+function Fact({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <>
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="min-w-0">{children}</dd>
+    </>
+  );
+}
+
 function AuditEntryDialog({ entryId, onClose }: { entryId: string | null; onClose: () => void }) {
   const query = useQuery({
     queryKey: ['audit-logs', 'detail', entryId],
@@ -132,17 +189,63 @@ function AuditEntryDialog({ entryId, onClose }: { entryId: string | null; onClos
         {query.data && (
           <>
             <DialogHeader>
-              <DialogTitle className="font-mono text-base">{query.data.summary.action}</DialogTitle>
-              <DialogDescription>
-                {query.data.summary.userEmail ?? 'system'} ·{' '}
-                {formatDateTime(query.data.summary.createdAtUtc)}
-                {query.data.summary.correlationId && (
-                  <span className="mt-1 block font-mono text-xs">
-                    correlation {query.data.summary.correlationId}
-                  </span>
-                )}
+              <DialogTitle className="text-base">
+                {describeAuditAction(query.data.summary.action)}
+              </DialogTitle>
+              <DialogDescription className="font-mono text-xs">
+                {query.data.summary.action}
               </DialogDescription>
             </DialogHeader>
+
+            {/*
+              Everything the entry knows, labelled — rather than a run-on line of values the reader
+              has to attribute themselves. `userAgent` in particular was already being fetched and
+              then dropped, which is the sort of thing a security review asks for by name.
+            */}
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
+              <Fact label="By">
+                {query.data.summary.userEmail ?? (
+                  <span className="text-muted-foreground">
+                    System — no signed-in user (a background job, or a step before authentication)
+                  </span>
+                )}
+              </Fact>
+              <Fact label="When">{formatDateTime(query.data.summary.createdAtUtc)}</Fact>
+              <Fact label="Subject">
+                {describeEntityType(query.data.summary.entityType) ?? '—'}
+                {query.data.summary.entityId && (
+                  <span className="text-muted-foreground ml-2 font-mono text-xs break-all">
+                    {query.data.summary.entityId}
+                  </span>
+                )}
+              </Fact>
+              <Fact label="From">
+                {query.data.summary.ipAddress ? (
+                  <span className="font-mono text-xs">{query.data.summary.ipAddress}</span>
+                ) : (
+                  '—'
+                )}
+              </Fact>
+              <Fact label="Client">
+                {query.data.userAgent ? (
+                  <span className="text-xs break-all">{query.data.userAgent}</span>
+                ) : (
+                  '—'
+                )}
+              </Fact>
+              <Fact label="Correlation">
+                {query.data.summary.correlationId ? (
+                  // The id that ties this entry to every log line and every other entry from the
+                  // same request — the thing you actually search on when reconstructing an incident.
+                  <span className="font-mono text-xs break-all">
+                    {query.data.summary.correlationId}
+                  </span>
+                ) : (
+                  '—'
+                )}
+              </Fact>
+            </dl>
+
             <AuditDiffViewer oldValues={query.data.oldValues} newValues={query.data.newValues} />
           </>
         )}
