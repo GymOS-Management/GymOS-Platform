@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { StatTile } from '@/components/data/stat-tile';
+import { StatCell, StatStrip } from '@/components/data/stat-strip';
 import { Provenance } from '@/components/charts/chart-parts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,13 +27,9 @@ export function SummaryPanels() {
   });
 
   if (query.isPending) {
-    return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <Skeleton key={index} className="h-24" />
-        ))}
-      </div>
-    );
+    // One block matching the strip's own height, rather than five separate shapes that then
+    // rearrange themselves into a single row the moment the data lands.
+    return <Skeleton className="h-[104px]" />;
   }
 
   if (query.isError) {
@@ -57,23 +53,23 @@ export function SummaryPanels() {
         <Provenance>Live · as of now</Provenance>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="Gyms" value={Number(summary.totalGyms).toLocaleString()} />
-        <StatTile label="Active" value={Number(summary.activeGyms).toLocaleString()} />
-        <StatTile
-          label="Suspended"
-          value={Number(summary.suspendedGyms).toLocaleString()}
-          hint={
-            Number(summary.provisioningGyms) > 0
-              ? `${Number(summary.provisioningGyms).toLocaleString()} provisioning`
-              : undefined
-          }
-        />
-        <StatTile
+      {/*
+        Gyms first as the total, then the three statuses that add up to it, then subscriptions.
+        `provisioningGyms` gets its own cell rather than riding along as a footnote on Suspended:
+        the two states have nothing to do with each other, and the API returns provisioning
+        precisely so that active + suspended + provisioning reconciles to the total
+        (`Analytics.md` §3) — which a reader can only check if the number is actually shown.
+      */}
+      <StatStrip>
+        <StatCell label="Gyms" value={Number(summary.totalGyms).toLocaleString()} />
+        <StatCell label="Active" value={Number(summary.activeGyms).toLocaleString()} />
+        <StatCell label="Suspended" value={Number(summary.suspendedGyms).toLocaleString()} />
+        <StatCell label="Provisioning" value={Number(summary.provisioningGyms).toLocaleString()} />
+        <StatCell
           label="Live subscriptions"
           value={Number(summary.liveSubscriptions).toLocaleString()}
         />
-      </div>
+      </StatStrip>
 
       <MrrPanel mrr={summary.mrr} />
     </section>
