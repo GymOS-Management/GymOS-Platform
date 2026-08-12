@@ -9,3 +9,9 @@ next-env.d.ts
 *.tsbuildinfo
 .env*.local
 .DS_Store
+
+# pnpm is the package manager (see package.json `packageManager` and DEPENDENCY_POLICY.md rule 0).
+# An npm- or yarn-resolved lockfile would not honour `minimumReleaseAge`, so it must never be
+# committed alongside pnpm-lock.yaml.
+package-lock.json
+yarn.lock

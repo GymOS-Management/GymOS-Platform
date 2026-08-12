@@ -66,9 +66,14 @@ test.beforeAll(() => {
 async function signIn(page: Page) {
   await page.goto('/login');
   await page.getByLabel('Email').fill(SUPER_ADMIN.email);
-  await page.getByLabel('Password').fill(SUPER_ADMIN.password);
+  await page.getByLabel('Password', { exact: true }).fill(SUPER_ADMIN.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/gyms/);
+  // F3 moved the landing route to /dashboard for anyone holding `analytics.read` or `audit.read`
+  // (F3-DESIGN D6); a SuperAdmin holds both. This journey's own screens are reached by navigation
+  // below, so it only needs to know that sign-in completed.
+  // 30s rather than the 5s default: the dev server compiles /dashboard on the first request of a
+  // run, and a timeout here would read as a broken redirect rather than a cold cache.
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 }
 
 /** Finds the run's gym from the list, through whichever nav the viewport offers. */
@@ -130,6 +135,8 @@ test.describe.serial('billing journey', () => {
 
   test('provisions the gym that will be billed', async ({ page }) => {
     await signIn(page);
+    // Sign-in lands on /dashboard since F3 (D6); the provision link lives on the gyms list.
+    await page.goto('/gyms');
 
     await page
       .getByRole('link', { name: /provision gym/i })

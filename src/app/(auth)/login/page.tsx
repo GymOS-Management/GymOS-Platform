@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/forms/form-field';
 import { ApiError } from '@/lib/api/problems';
 import { useSession } from '@/lib/auth/session';
-import { LANDING_ROUTE } from '@/lib/nav/items';
+import { resolveLandingRoute } from '@/lib/nav/items';
 
 interface LoginForm {
   email: string;
@@ -19,7 +19,7 @@ interface LoginForm {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { status, signIn } = useSession();
+  const { status, signIn, can } = useSession();
   const [failure, setFailure] = useState<string | null>(null);
 
   const {
@@ -32,16 +32,19 @@ export default function LoginPage() {
   // there is nothing to do here.
   useEffect(() => {
     if (status === 'authenticated') {
-      router.replace(LANDING_ROUTE);
+      router.replace(resolveLandingRoute(can));
     }
-  }, [status, router]);
+  }, [status, router, can]);
 
   const submit = handleSubmit(async (values) => {
     setFailure(null);
 
     try {
       await signIn(values.email, values.password);
-      router.replace(LANDING_ROUTE);
+      // Redirecting is left to the effect above rather than done here. Where the operator lands now
+      // depends on their permissions (D6), and `can` in this closure still answers for the
+      // anonymous render that opened the form — it would send an analytics reader to the fallback.
+      // The effect re-runs with the loaded session and resolves it correctly.
     } catch (error) {
       // Deliberately one banner, not a field error: the API's `auth.invalid_credentials` covers
       // unknown email, wrong password, and un-activated invitation precisely so sign-in is not an

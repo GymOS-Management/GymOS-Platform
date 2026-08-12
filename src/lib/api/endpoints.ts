@@ -1,11 +1,16 @@
 import { api, query, setAccessToken, forgetEtags } from './client';
 import type {
   AccessToken,
+  ActivityEntry,
   AssignSubscriptionRequest,
   AuditLogDetail,
   CancelSubscriptionRequest,
+  ChurnPoint,
   CreatePlanRequest,
   CurrentUser,
+  DashboardHealth,
+  DashboardSummary,
+  GrowthPoint,
   GymDetail,
   InvoiceDetail,
   InvoiceListItem,
@@ -17,6 +22,7 @@ import type {
   PagedUsers,
   PlanDetail,
   ProvisionGymRequest,
+  RevenuePoint,
   RoleDetail,
   SetPlanPriceRequest,
   SubscriptionDetail,
@@ -226,4 +232,47 @@ export const invoices = {
       confirmation,
       precondition: rowVersion,
     }),
+};
+
+/**
+ * What is true **right now** — computed live from `gyms` and `gym_subscriptions` on every request
+ * (Analytics.md §1). This is why the dashboard moves the moment a gym is assigned while no
+ * `/analytics` series does until the next night's job runs, and why F3 D7 labels the two differently
+ * on screen.
+ *
+ * `activity` is gated on `audit.read` while the other two need `analytics.read` — a deliberate split
+ * (SupportAgent holds the first and not the second), which is why the dashboard resolves permissions
+ * per panel rather than per page (D6).
+ */
+export const dashboard = {
+  summary: (signal?: AbortSignal) => api.get<DashboardSummary>('/dashboard/summary', signal),
+
+  health: (signal?: AbortSignal) => api.get<DashboardHealth>('/dashboard/health', signal),
+
+  /** `limit` is clamped 1–100 server-side; the default is 20. */
+  activity: (limit?: number, signal?: AbortSignal) =>
+    api.get<ActivityEntry[]>(`/dashboard/activity${query({ limit })}`, signal),
+};
+
+/**
+ * What was true **on a given day** — read only from the nightly `daily_platform_stats` read model.
+ *
+ * **These endpoints return only the days that exist.** A night the stats job did not run is absent
+ * from the response, never zero-filled, because zeros would draw a chart to the floor and read as
+ * "every gym vanished that night" (Analytics.md §2, pinned by
+ * `AGapInTheSeriesIsReturnedAsAGapAndNeverAsZeros`). Callers must not rebuild a continuous axis from
+ * `from`/`to` and default the missing days — see `@/lib/analytics/series` (D3).
+ *
+ * `from` and `to` are both required, and the inclusive span may not exceed 366 days; either mistake
+ * is `analytics.range_invalid` (400).
+ */
+export const analytics = {
+  revenue: (from: string, to: string, signal?: AbortSignal) =>
+    api.get<RevenuePoint[]>(`/analytics/revenue${query({ from, to })}`, signal),
+
+  gymsGrowth: (from: string, to: string, signal?: AbortSignal) =>
+    api.get<GrowthPoint[]>(`/analytics/gyms-growth${query({ from, to })}`, signal),
+
+  churn: (from: string, to: string, signal?: AbortSignal) =>
+    api.get<ChurnPoint[]>(`/analytics/churn${query({ from, to })}`, signal),
 };
