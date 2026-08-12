@@ -4,6 +4,66 @@
  */
 
 export interface paths {
+    "/api/v1/analytics/churn": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daily churn, canceled and expired kept apart
+         * @description Cancellations and expiries are reported separately and deliberately never merged before the caller sees them: a cancellation is a decision the customer made, an expiry is a payment that failed, and they are different problems — `total` is offered so no caller has to add the two, not so anyone has to choose between them. A day with no row is omitted, not zero-filled. `from` and `to` are both required and inclusive, and the range covers at most 366 days.
+         */
+        get: operations["GetChurn"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/gyms-growth": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daily gym counts, recorded days only
+         * @description One point per recorded day: total, active, suspended, provisioning, and new gyms. A day with no row is omitted, not zero-filled — see the endpoint group's remarks. `from` and `to` are both required and inclusive, and the range covers at most 366 days.
+         */
+        get: operations["GetGymsGrowth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/revenue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Daily MRR, recorded days only
+         * @description One point per day the nightly job actually recorded, each carrying MRR per currency — amounts in different currencies are never summed or converted. A day with no row is omitted, not zero-filled: a missing day drawn as zero reads as "we lost every gym that night", which a gap does not. `from` and `to` are both required and inclusive, and the range covers at most 366 days.
+         */
+        get: operations["GetRevenue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-logs": {
         parameters: {
             query?: never;
@@ -55,7 +115,7 @@ export interface paths {
         put?: never;
         /**
          * Change your own password
-         * @description Requires the current password. Rotates the security stamp and revokes every refresh token, including the caller's — the client must sign in again.
+         * @description Requires the current password. Rotates the security stamp and revokes every refresh token, including the caller's — the client must sign in again. Wrong current passwords count towards the account lockout and are audited, and the endpoint is rate-limited per client IP.
          */
         post: operations["ChangePassword"];
         delete?: never;
@@ -144,6 +204,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dashboard/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The audit log, trimmed, for the dashboard's activity feed
+         * @description The newest audit entries, in a shape sized for a feed rather than the full audit surface. Gated on `audit.read`, not `analytics.read` — this is the audit log wearing a different hat, and audit access must not depend on analytics access, or the reverse. `limit` defaults to 20 and is clamped between 1 and 100.
+         */
+        get: operations["GetRecentActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The platform's health checks, for a console panel
+         * @description The same checks `/health/ready` runs, projected to each check's name and status only. No exception details and no descriptions — either can carry a connection string or a stack trace, and this endpoint is for a status panel, not a debugger.
+         */
+        get: operations["GetDashboardHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/dashboard/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The dashboard's headline numbers, live
+         * @description Gym counts and MRR, computed from the operational tables at request time — not from AD-8's daily read model. A summary served from yesterday's row would not be a trade-off, it would be wrong. `mrr` carries one entry per currency; amounts in different currencies are never summed or converted (AD-43 is undecided).
+         */
+        get: operations["GetDashboardSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The feature catalogue
+         * @description Every feature the platform can switch on, with `adoptionCount` — how many gyms currently resolve it **on** through the full three-layer rule (override → plan → platform default), not merely how many plans include it. `overrideCount` is how many of those gyms hold an explicit exception. Both counts exclude deleted gyms, so they describe one population. Ordered by category then name; the catalogue is seeded, so this list is not paged.
+         */
+        get: operations["ListFeatures"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/features/{featureId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Edit a feature's copy, its platform default, and whether it is sold
+         * @description The **key is not editable** — code branches on it, and it is what the API returns. `If-Match` is **required**: this overwrites what you read, and changing `defaultEnabled` re-answers the feature for every gym that has neither an override nor a plan opinion — the widest blast radius of any write here. `isPremium` is informational: what a gym gets is decided by its plan and its overrides. `adoptionCount` and `overrideCount` are **null** in this response: they are a `GET /features` concern, computed there by a scan this endpoint does not pay for — null means they were not computed for this edit, not that they are zero.
+         */
+        put: operations["UpdateFeature"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/gyms": {
         parameters: {
             query?: never;
@@ -176,8 +336,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * One gym, with its branding
-         * @description A soft-deleted gym still resolves here, deliberately: an operator investigating why a tenant stopped working needs to see that it was deleted and when. Subscription, resolved features, device summary, and aggregate stats arrive with the modules that own them (M3–M6) rather than as fields that always read zero.
+         * One gym, with its branding, subscription, and resolved features
+         * @description A soft-deleted gym still resolves here, deliberately: an operator investigating why a tenant stopped working needs to see that it was deleted and when. `features` carries the whole catalogue resolved for this gym, each entry naming the layer that decided it — the same body `GET /gyms/{gymId}/features` returns — but only when you hold `features.read`; without it `features` is `null`, because one entry can carry `overrideReason`, the commercially sensitive text behind a paid feature granted for free. Device summary and aggregate stats arrive with the modules that own them (M5–M6) rather than as fields that always read zero.
          */
         get: operations["GetGym"];
         /**
@@ -229,6 +389,34 @@ export interface paths {
          * @description Declarative: send the complete branding, and an omitted value is cleared. A custom domain must be unique across the platform. Requires `If-Match` carrying the gym's `rowVersion` — branding is part of the gym's representation and shares its version, so a successful branding change also moves the gym's `ETag`. Returns the updated gym.
          */
         put: operations["UpdateGymBranding"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/gyms/{gymId}/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What this gym's features resolve to, and why
+         * @description The **whole catalogue**, each entry carrying `enabled` and the `source` that decided it — `Override`, `Plan`, or `Default` (§2.4). Not a list of exceptions: "what can this gym do" is the question worth answering, and `source` is what makes the answer explainable in a support conversation. `overrideReason` is present only when an override is what decided it. A gym with no live subscription resolves every feature against the platform default.
+         */
+        get: operations["GetGymFeatures"];
+        /**
+         * Grant or withdraw this gym's feature exceptions
+         * @description An override is stored **only when it differs from what the gym would get anyway**. Ask for exactly what the plan — or the platform default, when the plan is silent — already gives, and any existing exception is **withdrawn** instead, so a gym that later changes plan follows the new plan rather than staying frozen by a row nobody remembers creating. `reason` is therefore required only when an override is actually needed.
+         *
+         *     The response is the **full resolution, not an echo** of the request: after a withdrawal the stored state is deliberately not what was sent.
+         *
+         *     Only the keys listed are touched. No `If-Match`: each override is its own record keyed on (gym, feature), so there is no single version to match, and two operators editing different features do not conflict. Deciding what a *plan* includes is `billing.manage` instead.
+         */
+        put: operations["SetGymFeatures"];
         post?: never;
         delete?: never;
         options?: never;
@@ -590,6 +778,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/plans/{planId}/features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What this plan includes
+         * @description The features this plan has an **opinion** about (§2.4). A feature absent from the list is not excluded — it is unmentioned, and gyms on this plan fall through to the platform default for it. That third state is why resolution has three layers. Returned as part of the plan, so the response is the plan itself.
+         */
+        get: operations["GetPlanFeatures"];
+        /**
+         * Set what this plan includes
+         * @description Each entry names a feature `key` and an `isEnabled` of `true`, `false`, or **`null` to clear the plan's opinion** — which makes gyms on the plan fall through to the platform default, a different answer from `false`. Only the keys you send are touched, so a client that knows about ten features cannot erase an eleventh added by a later release. An unknown key rejects the whole request: a half-applied feature set is worse than a refused one. Gated on `billing.manage` because what a plan includes is priced — granting one gym an exception is `features.manage` instead. `If-Match` is **required**.
+         */
+        put: operations["SetPlanFeatures"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plans/{planId}/prices": {
         parameters: {
             query?: never;
@@ -600,7 +812,7 @@ export interface paths {
         get?: never;
         /**
          * Set the price for one cycle and currency
-         * @description Adds the price, or changes it if one already exists for that cycle and currency — one intent, so one operation. Prices are rows, so offering annual billing or a second currency is data entry rather than a schema change. **Existing subscriptions are unaffected**: they hold a price snapshot, so a change applies to new assignments and renewals only. `If-Match` is honoured when supplied. Returns the updated plan.
+         * @description Adds the price, or changes it if one already exists for that cycle and currency — one intent, so one operation. Prices are rows, so offering annual billing or a second currency is data entry rather than a schema change. **Existing subscriptions are unaffected**: they hold a price snapshot, so a change applies to new assignments and renewals only. `If-Match` is **required**: this overwrites a price you read, and it is an upsert with no state machine to refuse a stale interleaving, so without it one operator's price silently replaces another's. Returns the updated plan.
          */
         put: operations["SetPlanPrice"];
         post?: never;
@@ -622,7 +834,7 @@ export interface paths {
         post?: never;
         /**
          * Withdraw a price
-         * @description Removes the offer for that cycle and currency. Safe for existing subscriptions, which snapshot the price they were assigned. Returns the updated plan.
+         * @description Removes the offer for that cycle and currency. Safe for existing subscriptions, which snapshot the price they were assigned. `If-Match` is **required**, like the upsert above: withdrawing a price you may not have seen repriced is the same lost-update hazard from the other direction. Returns the updated plan.
          */
         delete: operations["RemovePlanPrice"];
         options?: never;
@@ -790,6 +1002,13 @@ export interface components {
             expiresInSeconds: number | string;
             tokenType: string;
         };
+        ActivityEntry: {
+            action: string;
+            entityType: string;
+            /** Format: date-time */
+            occurredAtUtc: string;
+            userEmail: null | string;
+        };
         AssignSubscriptionRequest: {
             billingCycle: string;
             currency: string;
@@ -827,6 +1046,16 @@ export interface components {
             currentPassword: string;
             newPassword: string;
         };
+        ChurnPoint: {
+            /** Format: int32 */
+            canceled: number | string;
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            expired: number | string;
+            /** Format: int32 */
+            total: number | string;
+        };
         CreatePlanRequest: {
             code: string;
             description: null | string;
@@ -854,6 +1083,53 @@ export interface components {
             roles: string[];
             status: string;
         };
+        DashboardHealth: {
+            checks: components["schemas"]["HealthCheckStatus"][];
+            status: string;
+        };
+        DashboardSummary: {
+            /** Format: int32 */
+            activeGyms: number | string;
+            /** Format: int32 */
+            liveSubscriptions: number | string;
+            mrr: components["schemas"]["MoneyDto"][];
+            /** Format: int32 */
+            provisioningGyms: number | string;
+            /** Format: int32 */
+            suspendedGyms: number | string;
+            /** Format: int32 */
+            totalGyms: number | string;
+        };
+        FeatureListItem: {
+            /** Format: int32 */
+            adoptionCount: null | number | string;
+            category: string;
+            defaultEnabled: boolean;
+            description: string;
+            /** Format: uuid */
+            id: string;
+            isDeclared: boolean;
+            isPremium: boolean;
+            key: string;
+            name: string;
+            /** Format: int32 */
+            overrideCount: null | number | string;
+            rowVersion: string;
+        };
+        GrowthPoint: {
+            /** Format: int32 */
+            activeGyms: number | string;
+            /** Format: date */
+            date: string;
+            /** Format: int32 */
+            newGyms: number | string;
+            /** Format: int32 */
+            provisioningGyms: number | string;
+            /** Format: int32 */
+            suspendedGyms: number | string;
+            /** Format: int32 */
+            totalGyms: number | string;
+        };
         GymBrandingDetail: {
             customDomain: null | string;
             emailSenderName: null | string;
@@ -870,6 +1146,7 @@ export interface components {
             currency: string;
             /** Format: date-time */
             deletedAtUtc: null | string;
+            features: null | components["schemas"]["ResolvedFeatureDetail"][];
             /** Format: uuid */
             id: string;
             name: string;
@@ -882,6 +1159,11 @@ export interface components {
             subscription: null | components["schemas"]["GymSubscriptionSummary"];
             suspensionReason: null | string;
             timeZoneId: string;
+        };
+        GymFeatureRequest: {
+            isEnabled: boolean;
+            key: string;
+            reason: null | string;
         };
         GymListItem: {
             countryCode: string;
@@ -913,6 +1195,10 @@ export interface components {
             status: string;
             /** Format: date-time */
             trialEndsAtUtc: null | string;
+        };
+        HealthCheckStatus: {
+            name: string;
+            status: string;
         };
         InviteUserRequest: {
             email: string;
@@ -986,6 +1272,11 @@ export interface components {
         MarkInvoicePaidRequest: {
             paymentReference: null | string;
         };
+        MoneyDto: {
+            /** Format: double */
+            amount: number | string;
+            currency: string;
+        };
         PagedResultOfAuditLogListItem: {
             items: components["schemas"]["AuditLogListItem"][];
             /** Format: int32 */
@@ -1056,6 +1347,7 @@ export interface components {
             /** Format: date-time */
             createdAtUtc: string;
             description: string;
+            features: components["schemas"]["PlanFeatureDetail"][];
             /** Format: uuid */
             id: string;
             isActive: boolean;
@@ -1077,6 +1369,19 @@ export interface components {
             subscribedGymCount: number | string;
             /** Format: int32 */
             trialDays: number | string;
+        };
+        PlanFeatureDetail: {
+            category: string;
+            /** Format: uuid */
+            featureId: string;
+            isEnabled: boolean;
+            isPremium: boolean;
+            key: string;
+            name: string;
+        };
+        PlanFeatureRequest: {
+            isEnabled: null | boolean;
+            key: string;
         };
         PlanListItem: {
             code: string;
@@ -1124,6 +1429,25 @@ export interface components {
             slug: string;
             timeZoneId: string;
         };
+        ResolvedFeatureDetail: {
+            category: string;
+            enabled: boolean;
+            /** Format: uuid */
+            featureId: string;
+            isPremium: boolean;
+            key: string;
+            name: string;
+            overrideReason: null | string;
+            /** Format: date-time */
+            overrideSetAtUtc: null | string;
+            overrideSetByEmail: null | string;
+            source: string;
+        };
+        RevenuePoint: {
+            /** Format: date */
+            date: string;
+            mrr: components["schemas"]["MoneyDto"][];
+        };
         RoleDetail: {
             /** Format: int32 */
             assignedUserCount: number | string;
@@ -1141,8 +1465,14 @@ export interface components {
             id: string;
             name: string;
         };
+        SetGymFeaturesRequest: {
+            features: components["schemas"]["GymFeatureRequest"][];
+        };
         SetPaymentStateRequest: {
             pastDue: boolean;
+        };
+        SetPlanFeaturesRequest: {
+            features: components["schemas"]["PlanFeatureRequest"][];
         };
         SetPlanPriceRequest: {
             /** Format: double */
@@ -1194,6 +1524,13 @@ export interface components {
         };
         SuspendUserRequest: {
             reason: string;
+        };
+        UpdateFeatureRequest: {
+            category: null | string;
+            defaultEnabled: boolean;
+            description: null | string;
+            isPremium: boolean;
+            name: string;
         };
         UpdateGymBrandingRequest: {
             customDomain: null | string;
@@ -1274,6 +1611,156 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    GetChurn: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChurnPoint"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetGymsGrowth: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GrowthPoint"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetRevenue: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevenuePoint"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ListAuditLogs: {
         parameters: {
             query?: {
@@ -1402,6 +1889,15 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1556,6 +2052,243 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetRecentActivity: {
+        parameters: {
+            query?: {
+                limit?: number | string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityEntry"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetDashboardHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardHealth"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetDashboardSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardSummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureListItem"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateFeature: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
+            path: {
+                featureId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFeatureRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeatureListItem"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1973,6 +2706,126 @@ export interface operations {
             };
             /** @description Precondition Required */
             428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetGymFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolvedFeatureDetail"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SetGymFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gymId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetGymFeaturesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolvedFeatureDetail"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3095,12 +3948,135 @@ export interface operations {
             };
         };
     };
+    GetPlanFeatures: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SetPlanFeatures: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
+            };
+            path: {
+                planId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetPlanFeaturesRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanDetail"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     SetPlanPrice: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
-                "If-Match"?: string;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
             };
             path: {
                 planId: string;
@@ -3158,14 +4134,23 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
+            /** @description Precondition Required */
+            428: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
         };
     };
     RemovePlanPrice: {
         parameters: {
             query?: never;
-            header?: {
-                /** @description Optional. When supplied, the write is refused with 409 if the resource has changed since you read it. Omitting it accepts last-write-wins. */
-                "If-Match"?: string;
+            header: {
+                /** @description The strong ETag from the resource you read. Omitting it is 428; a stale value is 409. */
+                "If-Match": string;
             };
             path: {
                 planId: string;
@@ -3204,6 +4189,15 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Precondition Required */
+            428: {
                 headers: {
                     [name: string]: unknown;
                 };

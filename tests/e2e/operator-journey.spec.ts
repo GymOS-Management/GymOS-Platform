@@ -40,14 +40,30 @@ test.beforeAll(() => {
 async function signIn(page: Page) {
   await page.goto('/login');
   await page.getByLabel('Email').fill(SUPER_ADMIN.email);
-  await page.getByLabel('Password').fill(SUPER_ADMIN.password);
+  await page.getByLabel('Password', { exact: true }).fill(SUPER_ADMIN.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page).toHaveURL(/\/gyms/);
+  // 30s rather than the 5s default: sign-in lands on /dashboard since F3, and the dev server
+  // compiles that route on the first request of a run — a timeout here reads as a broken redirect.
+  await expect(page).toHaveURL(/\/dashboard/, { timeout: 30_000 });
 }
 
 test.describe.serial('operator journey', () => {
-  test('signs in and lands on the gyms list, not a dashboard of zeroes', async ({ page }) => {
+  /**
+   * **This test's premise changed in F3, and the rename is the point.** It used to read "lands on
+   * the gyms list, not a dashboard of zeroes", because F1 deliberately had no dashboard: M5's stats
+   * jobs did not exist, and a grid of zeroes teaches operators to distrust the screen.
+   *
+   * M5 shipped those figures and F3 built the screen, so the deferral is discharged and the landing
+   * route is the dashboard for anyone holding `analytics.read` or `audit.read` (F3-DESIGN D6). Gyms
+   * remains the fallback for a caller holding neither — asserted in the unit suite, where a role
+   * without those permissions can be constructed.
+   */
+  test('signs in and lands on a dashboard that has real figures on it', async ({ page }) => {
     await signIn(page);
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
+
+    // The gyms list is still one click away, and is still where the operator does most of the work.
+    await page.getByRole('link', { name: 'Gyms' }).first().click();
     await expect(page.getByRole('heading', { name: 'Gyms' })).toBeVisible();
   });
 
@@ -55,6 +71,9 @@ test.describe.serial('operator journey', () => {
     page,
   }) => {
     await signIn(page);
+    // Reloaded on a data screen rather than the landing route, so the assertion below is about the
+    // session surviving rather than about wherever sign-in happens to land (F3 moved that).
+    await page.goto('/gyms');
     await page.reload();
 
     // The token was in memory and is gone; only the httpOnly cookie can restore the session.
@@ -64,6 +83,7 @@ test.describe.serial('operator journey', () => {
 
   test('provisions a gym and sees it in Provisioning', async ({ page }) => {
     await signIn(page);
+    await page.goto('/gyms');
 
     // .first(): when the list is empty, the header action and the empty-state action both offer it.
     await page
@@ -156,6 +176,7 @@ test.describe.serial('operator journey', () => {
     page,
   }) => {
     await signIn(page);
+    await page.goto('/gyms');
 
     await page.getByLabel('Search gyms').fill(gym.slug);
     await expect(visibleText(page, /no gyms match/i).first()).toBeVisible();
@@ -188,11 +209,11 @@ test.describe.serial('operator journey', () => {
     if (isMobile) {
       // The sidebar is a drawer on a phone: open it, navigate, and confirm it closed itself.
       await page.getByRole('button', { name: 'Open navigation' }).click();
-      await page.getByRole('link', { name: 'Audit log' }).click();
+      await page.getByRole('link', { name: 'Audit log', exact: true }).click();
       await expect(page).toHaveURL(/\/audit-logs/);
       await expect(page.getByRole('link', { name: 'Administrators' })).toBeHidden();
     } else {
-      await page.getByRole('link', { name: 'Audit log' }).click();
+      await page.getByRole('link', { name: 'Audit log', exact: true }).click();
       await expect(page).toHaveURL(/\/audit-logs/);
     }
   });

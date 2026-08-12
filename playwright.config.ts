@@ -11,6 +11,16 @@ import { defineConfig, devices } from '@playwright/test';
  * Two projects on purpose: the console must *work* at 375px, not merely not crash — the mobile pass
  * runs the same journeys through the drawer nav and card lists.
  */
+/**
+ * The dev server's port, overridable because 3000 is the default for every Next app on the machine.
+ *
+ * `reuseExistingServer` means a *different* project already holding 3000 is silently accepted as
+ * ours — the suite then drives someone else's login form and fails with "Invalid email or password",
+ * which looks like a seeding problem and is not. Setting `E2E_PORT` moves this run out of the way.
+ */
+const PORT = process.env.E2E_PORT ?? '3000';
+const BASE_URL = `http://localhost:${PORT}`;
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false, // The journeys share one backend's data; parallel runs would race.
@@ -20,7 +30,7 @@ export default defineConfig({
   retries: 0,
   timeout: 30_000,
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: BASE_URL,
     trace: 'retain-on-failure',
   },
   projects: [
@@ -30,8 +40,8 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['iPhone 13'], browserName: 'chromium' } },
   ],
   webServer: {
-    command: 'pnpm dev',
-    url: 'http://localhost:3000',
+    command: `pnpm dev --port ${PORT}`,
+    url: BASE_URL,
     reuseExistingServer: true,
     timeout: 120_000,
   },

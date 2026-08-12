@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useSession } from '@/lib/auth/session';
-import { NAV_ITEMS } from '@/lib/nav/items';
+import { NAV_ITEMS, isVisible } from '@/lib/nav/items';
 import { cn } from '@/lib/utils/cn';
 import { initialsOf } from '@/lib/utils/format';
 
@@ -68,7 +68,7 @@ function NavLinks({ className, onNavigate }: { className?: string; onNavigate?: 
 
   return (
     <nav className={className} aria-label="Main">
-      {NAV_ITEMS.filter((item) => !item.permission || can(item.permission)).map((item) => {
+      {NAV_ITEMS.filter((item) => isVisible(item, can)).map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
         return (

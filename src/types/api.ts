@@ -72,6 +72,21 @@ export type MarkInvoicePaidRequest = Schemas['MarkInvoicePaidRequest'];
 export type PagedInvoices = Schemas['PagedResultOfInvoiceListItem'];
 
 /**
+ * An amount with its currency. Money never travels as a bare decimal (backend rule R4), and on this
+ * side that is what stops a screen adding two currencies together — see `MRR` below.
+ */
+export type MoneyDto = Schemas['MoneyDto'];
+
+export type DashboardSummary = Schemas['DashboardSummary'];
+export type DashboardHealth = Schemas['DashboardHealth'];
+export type HealthCheckStatus = Schemas['HealthCheckStatus'];
+export type ActivityEntry = Schemas['ActivityEntry'];
+
+export type RevenuePoint = Schemas['RevenuePoint'];
+export type GrowthPoint = Schemas['GrowthPoint'];
+export type ChurnPoint = Schemas['ChurnPoint'];
+
+/**
  * Subscription lifecycle, by name as the API reports it. `Canceled` and `Expired` are deliberately
  * distinct: cancellation is a decision and expiry is a failure to collect, and M5's churn figure
  * depends on never collapsing them.

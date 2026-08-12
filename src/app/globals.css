@@ -28,6 +28,45 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.55 0.2 262);
+
+  /*
+   * Chart tokens (F3-DESIGN D10). Deliberately NOT the semantic tokens above: `--primary` is a UI
+   * accent chosen to sit under buttons, and a data series is a different job with different rules
+   * (a fixed order, a lightness band, and a colour-vision-deficiency separation floor between
+   * adjacent slots).
+   *
+   * These are the reference categorical palette's first three slots, validated with the dataviz
+   * skill's `validate_palette.js` against THIS repo's card surface (`--card`, not a generic white),
+   * all-pairs, in both modes:
+   *
+   *   light (#ffffff): band PASS · chroma PASS · CVD worst dE 9.2 · normal-vision worst dE 24.0
+   *                    contrast WARN - #1baf7a is 2.82:1
+   *   dark  (#131313): band PASS · chroma PASS · CVD worst dE 9.4 · normal-vision worst dE 20.9
+   *                    contrast PASS - all >= 3:1
+   *
+   * Two consequences that are load-bearing, not stylistic:
+   *
+   * 1. The light-mode WARN is why every chart ships a table view and direct labels rather than
+   *    relying on the swatch alone (D9). Removing the toggle re-opens the finding.
+   * 2. THREE SLOTS IS THE CAP. A fourth would put yellow beside orange and fail the all-pairs
+   *    gates. When a screen seems to need a fourth series, it needs two charts instead — which is
+   *    exactly why Growth splits population from new gyms (D4). Do not add --chart-4.
+   *
+   * Dark values are the same hues re-stepped for the dark surface, never an automatic inversion.
+   */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #c3c2b7;
+  --chart-ink-muted: #898781;
+
+  /* Status colours are fixed, never themed, and never reused as a series colour. Always shipped
+   * with an icon and a text label, because two of them are sub-3:1 on a light surface by design. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
 }
 
 .dark {
@@ -50,6 +89,16 @@
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.65 0.18 262);
+
+  /* The same three hues, re-stepped for the dark card surface and validated as a set — see :root. */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-grid: #2c2c2a;
+  --chart-axis: #383835;
+  --chart-ink-muted: #898781;
+
+  /* Status steps are mode-invariant: all four clear 3:1 on the dark surface as they are. */
 }
 
 @theme inline {
@@ -72,6 +121,16 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Exposed to Tailwind so a legend swatch or a table key can use `bg-chart-1` and stay in step with
+   * the SVG marks, which reference `var(--chart-1)` directly. */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-status-good: var(--status-good);
+  --color-status-warning: var(--status-warning);
+  --color-status-serious: var(--status-serious);
+  --color-status-critical: var(--status-critical);
 }
 
 @layer base {
