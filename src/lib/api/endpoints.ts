@@ -69,6 +69,22 @@ export const auth = {
 
   changePassword: (currentPassword: string, newPassword: string) =>
     api.post<void>('/auth/change-password', { currentPassword, newPassword }),
+
+  /**
+   * Is an activation link still usable? Anonymous — the person holding it cannot sign in, which is
+   * the situation it exists to resolve.
+   *
+   * Answers validity and nothing else: no email, no name, no roles. Every failure (unknown,
+   * expired, already used, account gone) is the same 404 with the same body, deliberately — a
+   * distinct "expired" would confirm the token had once been real. So the console can only say
+   * "this link is no longer usable", never why.
+   */
+  checkActivationLink: (token: string, signal?: AbortSignal) =>
+    api.get<void>(`/auth/set-password${query({ token })}`, signal, { anonymous: true }),
+
+  /** Consumes the link and sets the password. Anonymous, for the same reason. */
+  setPassword: (token: string, newPassword: string) =>
+    api.post<void>('/auth/set-password', { token, newPassword }, { anonymous: true }),
 };
 
 export const gyms = {
@@ -122,6 +138,22 @@ export const users = {
     api.post<UserDetail>(`/users/${userId}/suspend`, { reason }),
 
   reactivate: (userId: string) => api.post<UserDetail>(`/users/${userId}/reactivate`),
+
+  /**
+   * Sends the activation link again — the recovery path when an invitation never arrived.
+   *
+   * Only for an administrator who has never activated; the API refuses an established one with
+   * `users.not_pending_activation`, because that case wants a password reset and the two messages
+   * read very differently.
+   */
+  resendInvitation: (userId: string) => api.post<void>(`/users/${userId}/resend-invitation`),
+
+  /**
+   * Emails the account's owner a one-time link. **It does not set a password** — an administrator
+   * who could set another administrator's password would hold a credential that is no longer one
+   * (ARCHITECTURE.md §3.6).
+   */
+  sendPasswordReset: (userId: string) => api.post<void>(`/users/${userId}/reset-password`),
 };
 
 export const roles = {

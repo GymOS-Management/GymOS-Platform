@@ -116,13 +116,64 @@ function UserLifecycleActions({ user }: { user: UserDetail }) {
       toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
   });
 
+  /**
+   * The two ADR-53 actions. Deliberately worded as "sent", never "delivered": the API reports that
+   * the message reached the mail server, and a bounce or a spam filing is invisible from here.
+   */
+  const resendInvitation = useMutation({
+    mutationFn: () => users.resendInvitation(user.id),
+    onSuccess: () =>
+      toast.success(
+        `A new activation link has been sent to ${user.email}. It replaces the last one.`,
+      ),
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
+  });
+
+  const sendPasswordReset = useMutation({
+    mutationFn: () => users.sendPasswordReset(user.id),
+    onSuccess: () => toast.success(`A password-reset link has been sent to ${user.email}.`),
+    onError: (error) =>
+      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
+  });
+
   if (isSelf) {
     return null;
   }
 
+  const pendingActivation = user.status === 'PendingActivation';
+
   return (
     <RequirePermission permission="users.manage">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
+        {/*
+          Which of the two is offered follows the account's own state, because the API refuses the
+          wrong one — an invitation to somebody established, or a "reset" for somebody who never had
+          a password. Offering only the one that applies spares the operator the error.
+
+          Neither is offered for a suspended account: a reset must not be a way back in, so
+          reactivation comes first, deliberately.
+        */}
+        {pendingActivation && (
+          <Button
+            variant="outline"
+            onClick={() => resendInvitation.mutate()}
+            disabled={resendInvitation.isPending}
+          >
+            {resendInvitation.isPending ? 'Sending…' : 'Re-send invitation'}
+          </Button>
+        )}
+
+        {user.status === 'Active' && (
+          <Button
+            variant="outline"
+            onClick={() => sendPasswordReset.mutate()}
+            disabled={sendPasswordReset.isPending}
+          >
+            {sendPasswordReset.isPending ? 'Sending…' : 'Send password reset'}
+          </Button>
+        )}
+
         {user.status === 'Suspended' ? (
           <Button onClick={() => setDialog('reactivate')}>Reactivate</Button>
         ) : (

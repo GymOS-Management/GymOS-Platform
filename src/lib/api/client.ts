@@ -219,7 +219,13 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 export const api = {
-  get: <T>(path: string, signal?: AbortSignal) => request<T>(path, { signal }),
+  // `extra` for parity with the writes below: the activation-link check is a GET that must go out
+  // *without* a bearer token, because its caller has no way to have one yet (ADR-53).
+  get: <T>(
+    path: string,
+    signal?: AbortSignal,
+    extra?: Omit<RequestOptions, 'method' | 'body' | 'signal'>,
+  ) => request<T>(path, { ...extra, signal }),
 
   post: <T>(path: string, body?: unknown, extra?: Omit<RequestOptions, 'method' | 'body'>) =>
     request<T>(path, { ...extra, method: 'POST', body }),
