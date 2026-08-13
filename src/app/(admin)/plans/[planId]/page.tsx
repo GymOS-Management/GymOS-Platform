@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/data/status-badge';
 import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
+import { PlanFeaturesCard } from '@/features/feature-flags/plan-features-card';
 import {
   PlanForm,
   type PlanFormValues,
@@ -36,6 +37,9 @@ export default function PlanDetailPage({ params }: { params: Promise<{ planId: s
   const { planId } = use(params);
   const queryClient = useQueryClient();
   const canManage = usePermission('billing.manage');
+  // Deciding what a plan includes is pricing the product, not a features-catalogue concern: the
+  // permission split below is `billing.read`/`billing.manage`, deliberately not `features.*`.
+  const canViewFeatures = usePermission('billing.read');
 
   const query = useQuery({
     queryKey: ['plans', 'detail', planId],
@@ -89,6 +93,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ planId: s
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="prices">Prices</TabsTrigger>
+          {canViewFeatures && <TabsTrigger value="features">Features</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview">
@@ -112,6 +117,27 @@ export default function PlanDetailPage({ params }: { params: Promise<{ planId: s
             </CardContent>
           </Card>
         </TabsContent>
+
+        {canViewFeatures && (
+          <TabsContent value="features">
+            <Card>
+              <CardHeader>
+                <CardTitle>Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Keyed by rowVersion, like the price editor above: a successful save invalidates the
+                    plan detail query, which brings a fresh rowVersion and remounts the card on its
+                    authoritative state rather than a stale pre-save draft. */}
+                <PlanFeaturesCard
+                  key={plan.rowVersion}
+                  planId={plan.id}
+                  rowVersion={plan.rowVersion}
+                  canManage={canManage}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </>
   );
