@@ -101,12 +101,21 @@ async function openNavLink(page: Page, isMobile: boolean, label: string) {
  * which is why *those* buttons click fine on mobile). On a narrow viewport that leaves the button
  * sitting at the bottom-left, exactly where `next dev`'s floating dev-tools indicator is fixed —
  * Playwright's real mouse click lands on the indicator instead and times out, mobile-only.
- * `dispatchEvent` fires the click straight at the button node — no coordinates, no hit-testing —
- * which is the fix for chrome that exists only because this is a dev server; a production click
- * would never hit it.
+ *
+ * Branched on `isMobile` rather than always using `dispatchEvent`: the overlay only exists on the
+ * mobile project, and neither of these two components is exercised by any other spec in the suite,
+ * so this journey is the only place a genuine overlay/z-index/visibility regression on either button
+ * could ever be caught. Skipping Playwright's actionability checks unconditionally would give that
+ * guarantee up on desktop for no reason — `dispatchEvent` (no coordinates, no hit-testing) is reserved
+ * for the one viewport where the dev-only indicator actually gets in the way.
  */
-async function clickSave(scope: Locator | Page) {
-  await scope.getByRole('button', { name: 'Save' }).dispatchEvent('click');
+async function clickSave(scope: Locator | Page, isMobile: boolean) {
+  const save = scope.getByRole('button', { name: 'Save' });
+  if (isMobile) {
+    await save.dispatchEvent('click');
+    return;
+  }
+  await save.click();
 }
 
 /** Finds this run's gym from the list, through whichever nav the viewport offers. */
@@ -198,6 +207,7 @@ test.describe.serial('feature flags journey', () => {
 
   test("sets the plan's own opinion on two features, ready for the gym steps and step 9", async ({
     page,
+    isMobile,
   }) => {
     await signIn(page);
     await page.goto(`/plans/${plan.id}`);
@@ -209,7 +219,7 @@ test.describe.serial('feature flags journey', () => {
     // rather than clicking a button that was already selected.
     await featureRow(page, PLAN_FEATURE.key).getByRole('button', { name: 'Included' }).click();
     await featureRow(page, DEFAULT_FEATURE.key).getByRole('button', { name: 'Included' }).click();
-    await clickSave(page);
+    await clickSave(page, isMobile);
 
     await expect(
       featureRow(page, PLAN_FEATURE.key).getByRole('button', { name: 'Included' }),
@@ -293,7 +303,7 @@ test.describe.serial('feature flags journey', () => {
     // assertion can find, not a fixed string the previous run already wrote.
     const updated = `${original} (e2e ${runId})`;
     await description.fill(updated);
-    await clickSave(dialog);
+    await clickSave(dialog, isMobile);
 
     await expect(page.getByText('Feature updated.')).toBeVisible();
     await expect(visibleText(page, updated).first()).toBeVisible();
@@ -315,7 +325,7 @@ test.describe.serial('feature flags journey', () => {
     const defaultCheckbox = dialog.getByRole('checkbox', { name: 'Enabled by default' });
     const wasChecked = await defaultCheckbox.isChecked();
     await defaultCheckbox.setChecked(!wasChecked);
-    await clickSave(dialog);
+    await clickSave(dialog, isMobile);
 
     // D4: the widest-blast-radius write in the module re-answers every gym with neither an override
     // nor a plan opinion, and the API exposes no count of how many that is — the confirmation says so
@@ -356,7 +366,7 @@ test.describe.serial('feature flags journey', () => {
     // The plan says Gateway is on (previous test); an override that *differs* must turn it off.
     await page.getByRole('switch', { name: PLAN_FEATURE.name }).setChecked(false);
     await page.getByLabel(`Reason for ${PLAN_FEATURE.name}`).fill(OVERRIDE_REASON);
-    await clickSave(page);
+    await clickSave(page, isMobile);
 
     await expect(visibleText(page, `${PLAN_FEATURE.name} is now off (Override)`)).toBeVisible();
 
@@ -391,7 +401,7 @@ test.describe.serial('feature flags journey', () => {
     // comment on why `billing.read`-gated plan data isn't available to check first).
     await page.getByRole('switch', { name: PLAN_FEATURE.name }).setChecked(true);
     await page.getByLabel(`Reason for ${PLAN_FEATURE.name}`).fill(WITHDRAW_REASON);
-    await clickSave(page);
+    await clickSave(page, isMobile);
 
     // The outcome is read back from the response, not predicted — this is the whole point of the
     // task: an override is only ever stored while it differs from the plan, so matching the plan's
@@ -417,7 +427,7 @@ test.describe.serial('feature flags journey', () => {
     // withdrawn back to "no opinion", not only that "no opinion" can be left alone.
     await featureRow(page, EXCLUDED_FEATURE.key).getByRole('button', { name: 'Excluded' }).click();
     await featureRow(page, DEFAULT_FEATURE.key).getByRole('button', { name: 'Default' }).click();
-    await clickSave(page);
+    await clickSave(page, isMobile);
 
     await expect(
       featureRow(page, EXCLUDED_FEATURE.key).getByRole('button', { name: 'Excluded' }),
