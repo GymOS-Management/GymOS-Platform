@@ -47,10 +47,12 @@ src/app/(admin)/analytics/page.tsx
 ### Task 1: The generated types
 
 **Files:**
+
 - Regenerate: `src/types/api.d.ts` (by command, never by hand)
 - Modify: `src/types/api.ts`
 
 **Interfaces:**
+
 - Produces: `DashboardSummary`, `DashboardHealth`, `HealthCheckStatus`, `ActivityEntry`, `MoneyDto`, `RevenuePoint`, `GrowthPoint`, `ChurnPoint` — exported from `@/types/api`.
 
 - [ ] **Step 1: Record the baseline**
@@ -102,14 +104,16 @@ git commit -m "chore(api): regenerate types for M5's dashboard and analytics ope
 
 ### Task 2: `toastApiError` — the extraction F2's review judged earned
 
-F2's whole-branch review: *"`error instanceof ApiError ? error.message : 'Something went wrong.'` is copied verbatim six times, and the bare ternary appears 26 times across 17 files. One helper plus a small `ApiErrorText` component removes all of it without inventing an abstraction. This is the one extraction the review judged clearly earned."* F3 adds error paths of its own, so it either uses a helper or becomes copy 27.
+F2's whole-branch review: _"`error instanceof ApiError ? error.message : 'Something went wrong.'` is copied verbatim six times, and the bare ternary appears 26 times across 17 files. One helper plus a small `ApiErrorText` component removes all of it without inventing an abstraction. This is the one extraction the review judged clearly earned."_ F3 adds error paths of its own, so it either uses a helper or becomes copy 27.
 
 **Files:**
+
 - Create: `src/lib/feedback/toast-api-error.ts`, `src/components/feedback/api-error-text.tsx`
 - Modify: every file currently carrying the ternary (find them in Step 2 — do not trust this plan's count)
 - Test: `tests/unit/toast-api-error.test.tsx`
 
 **Interfaces:**
+
 - Produces:
   - `apiErrorMessage(error: unknown): string` — the message, or `'Something went wrong.'`
   - `toastApiError(error: unknown, title?: string): void` — calls `sonner`'s `toast.error`
@@ -224,10 +228,12 @@ git commit -m "refactor(feedback): one apiErrorMessage, not twenty-six ternaries
 ### Task 3: The six endpoint functions
 
 **Files:**
+
 - Modify: `src/lib/api/endpoints.ts`
 - Test: `tests/unit/endpoints.test.ts`
 
 **Interfaces:**
+
 - Consumes: Task 1's type aliases; `api.get`, `query` from `./client`.
 - Produces:
   - `dashboard.summary(signal?)` → `Promise<DashboardSummary>`
@@ -333,11 +339,13 @@ git commit -m "feat(api): the six dashboard and analytics operations"
 This task contains **the increment's central mechanism** (D3). Everything else is presentation.
 
 **Files:**
+
 - Modify: `package.json`, `pnpm-lock.yaml`, `docs/DEPENDENCY_POLICY.md`
 - Create: `src/lib/analytics/series.ts`, `src/components/data/chart-card.tsx`
 - Test: `tests/unit/series.test.ts`
 
 **Interfaces:**
+
 - Produces:
   - `expandDailySeries<T extends { date: string }>(recorded: readonly T[], from: string, to: string): { date: string; recorded: T | null }[]`
   - `rangeError(from: string, to: string): string | null`
@@ -363,7 +371,10 @@ describe('expandDailySeries', () => {
     // dropped the day entirely, the chart would draw a straight line across a night the job never
     // ran and silently claim data that does not exist.
     const rows = expandDailySeries(
-      [{ date: '2026-08-01', total: 10 }, { date: '2026-08-03', total: 12 }],
+      [
+        { date: '2026-08-01', total: 10 },
+        { date: '2026-08-03', total: 12 },
+      ],
       '2026-08-01',
       '2026-08-03',
     );
@@ -597,11 +608,13 @@ git commit -m "feat(analytics): the gap-preserving series helper, and Recharts w
 ### Task 5: The dashboard, its nav entry, and the landing resolver
 
 **Files:**
+
 - Create: `src/app/(admin)/dashboard/page.tsx`, `src/features/dashboard/{stat-tiles,health-panel,activity-feed}.tsx`
 - Modify: `src/lib/nav/items.ts`, `src/app/page.tsx`
 - Test: `tests/unit/landing-route.test.ts`, `tests/unit/stat-tiles.test.tsx`, `tests/unit/dashboard-page.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `dashboard.*` (Task 3), `formatMoney` (`@/lib/utils/format`), `usePermission`/`RequirePermission`/`useSession` (`@/lib/auth/session`).
 - Produces: `landingRouteFor(can: (permission: string) => boolean): string`
 
@@ -627,9 +640,7 @@ describe('landingRouteFor', () => {
 
 describe('navigation', () => {
   it('gates both new entries on analytics.read', () => {
-    const gated = NAV_ITEMS.filter((item) =>
-      ['/dashboard', '/analytics'].includes(item.href),
-    );
+    const gated = NAV_ITEMS.filter((item) => ['/dashboard', '/analytics'].includes(item.href));
 
     expect(gated).toHaveLength(2);
     expect(gated.every((item) => item.permission === 'analytics.read')).toBe(true);
@@ -911,11 +922,13 @@ git commit -m "feat(dashboard): the console's front door, resolved per permissio
 ### Task 6: The analytics page
 
 **Files:**
+
 - Create: `src/app/(admin)/analytics/page.tsx`, `src/features/analytics/{range-picker,revenue-chart,growth-chart,churn-chart}.tsx`
 - Modify: `src/lib/api/problems.ts`
 - Test: `tests/unit/range-picker.test.tsx`, `tests/unit/revenue-chart.test.tsx`, `tests/unit/churn-chart.test.tsx`
 
 **Interfaces:**
+
 - Consumes: `analytics.*` (Task 3), `expandDailySeries`, `rangeError`, `MAX_RANGE_DAYS`, `ChartCard` (Task 4).
 - Produces — pin these signatures, the tests import them by name:
   - `toRevenueRows(points: readonly RevenuePoint[], from: string, to: string): { currencies: string[]; rows: Record<string, string | number | null>[] }`
@@ -933,7 +946,13 @@ import { toRevenueRows } from '@/features/analytics/revenue-chart';
 import type { RevenuePoint } from '@/types/api';
 
 const points: RevenuePoint[] = [
-  { date: '2026-08-01', mrr: [{ amount: 100, currency: 'EUR' }, { amount: 50, currency: 'GBP' }] },
+  {
+    date: '2026-08-01',
+    mrr: [
+      { amount: 100, currency: 'EUR' },
+      { amount: 50, currency: 'GBP' },
+    ],
+  },
   // 2026-08-02 is missing: the job did not run that night.
   { date: '2026-08-03', mrr: [{ amount: 120, currency: 'EUR' }] },
 ];
@@ -968,7 +987,11 @@ describe('toRevenueRows', () => {
 
 ```tsx
 it('keeps cancellations and expiries as separate series', () => {
-  const { series } = toChurnRows([{ date: '2026-08-01', canceled: 2, expired: 3, total: 5 }], '2026-08-01', '2026-08-01');
+  const { series } = toChurnRows(
+    [{ date: '2026-08-01', canceled: 2, expired: 3, total: 5 }],
+    '2026-08-01',
+    '2026-08-01',
+  );
   // Grouped, not stacked: comparing the two causes is the whole reason M5 stores them apart.
   expect(series).toEqual(['canceled', 'expired']);
 });
@@ -1064,6 +1087,7 @@ git commit -m "feat(analytics): three series that break at gaps and never combin
 ### Task 7: End-to-end, as-built notes, and full verification
 
 **Files:**
+
 - Create: `tests/e2e/dashboard-analytics.spec.ts`, `docs/F3-AS-BUILT.md`
 - Modify: `docs/F3-DESIGN.md` (status line only)
 

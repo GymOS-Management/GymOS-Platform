@@ -1,0 +1,29 @@
+# Line endings are LF in the working tree, on every platform.
+#
+# Without this, a Windows checkout with `core.autocrlf=true` (Git for Windows' default) writes CRLF
+# into the working tree, and `pnpm format:check` fails on *every* file — Prettier's `endOfLine`
+# defaults to `lf` and it checks the working tree, not the index. The gate was unpassable on Windows
+# for that reason alone, on 82 files nobody had misformatted.
+#
+# `eol=lf` overrides `core.autocrlf`, so this fixes the checkout rather than asking each developer to
+# change a global Git setting. It changes no committed content: `text=auto` has always normalised
+# these files to LF on the way in, which is why adding this produced no diff.
+#
+# The alternative considered and rejected was `endOfLine: "auto"` in .prettierrc. It would silence
+# the gate in one line, but it silences it by accepting whichever ending each file happens to have —
+# so a genuinely mixed file would pass. This enforces the thing the gate is meant to check.
+* text=auto eol=lf
+
+# Binary files, listed explicitly rather than left to detection: a false positive on any of these
+# would corrupt them by rewriting bytes that are not line endings.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.pdf binary
