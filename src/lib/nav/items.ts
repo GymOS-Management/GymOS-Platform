@@ -5,6 +5,7 @@ import {
   CreditCard,
   LayoutDashboard,
   Receipt,
+  ToggleLeft,
   Users,
   type LucideIcon,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { label: 'Plans', href: '/plans', icon: CreditCard, permission: 'billing.read' },
   { label: 'Invoices', href: '/invoices', icon: Receipt, permission: 'billing.read' },
+  { label: 'Features', href: '/features', icon: ToggleLeft, permission: 'features.read' },
   { label: 'Administrators', href: '/users', icon: Users, permission: 'users.read' },
   { label: 'Audit log', href: '/audit-logs', icon: ClipboardList, permission: 'audit.read' },
 ];
