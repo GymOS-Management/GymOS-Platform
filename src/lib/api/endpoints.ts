@@ -10,6 +10,7 @@ import type {
   CurrentUser,
   DashboardHealth,
   DashboardSummary,
+  FeatureListItem,
   GrowthPoint,
   GymDetail,
   InvoiceDetail,
@@ -22,10 +23,14 @@ import type {
   PagedUsers,
   PlanDetail,
   ProvisionGymRequest,
+  ResolvedFeatureDetail,
   RevenuePoint,
   RoleDetail,
+  SetGymFeaturesRequest,
+  SetPlanFeaturesRequest,
   SetPlanPriceRequest,
   SubscriptionDetail,
+  UpdateFeatureRequest,
   UpdateGymBrandingRequest,
   UpdateGymRequest,
   UpdatePlanRequest,
@@ -118,6 +123,18 @@ export const gyms = {
    */
   remove: (gymId: string, confirmation: string) =>
     api.delete<void>(`/gyms/${gymId}`, { confirmation }),
+
+  /** The whole catalogue resolved for this gym, with the layer that decided each answer. */
+  features: (gymId: string, signal?: AbortSignal) =>
+    api.get<ResolvedFeatureDetail[]>(`/gyms/${gymId}/features`, signal),
+
+  /**
+   * No `precondition`, deliberately: each override is its own aggregate keyed on (gym, feature) and
+   * the request merges per key, so two operators editing different features do not conflict at all
+   * (Features.md, "Where If-Match is required, and where it is not").
+   */
+  setFeatures: (gymId: string, body: SetGymFeaturesRequest) =>
+    api.put<ResolvedFeatureDetail[]>(`/gyms/${gymId}/features`, body),
 };
 
 export const users = {
@@ -202,6 +219,25 @@ export const plans = {
 
   removePrice: (planId: string, planPriceId: string, rowVersion: string) =>
     api.delete<PlanDetail>(`/plans/${planId}/prices/${planPriceId}`, { precondition: rowVersion }),
+
+  /** Returns the plan: features are part of it. */
+  features: (planId: string, signal?: AbortSignal) =>
+    api.get<PlanDetail>(`/plans/${planId}/features`, signal),
+
+  setFeatures: (planId: string, body: SetPlanFeaturesRequest, rowVersion: string) =>
+    api.put<PlanDetail>(`/plans/${planId}/features`, body, { precondition: rowVersion }),
+};
+
+export const features = {
+  /** Not paged: the catalogue is seeded and there are twelve keys. */
+  list: (signal?: AbortSignal) => api.get<FeatureListItem[]>('/features', signal),
+
+  /**
+   * Copy, default and premium. The key is absent because it is immutable — a field the server
+   * ignores is worse than no field (FeatureContracts.cs).
+   */
+  update: (featureId: string, body: UpdateFeatureRequest, rowVersion: string) =>
+    api.put<FeatureListItem>(`/features/${featureId}`, body, { precondition: rowVersion }),
 };
 
 export const subscriptions = {

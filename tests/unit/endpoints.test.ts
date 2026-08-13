@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __resetClientState, rememberEtag, setAccessToken } from '@/lib/api/client';
-import { invoices, plans } from '@/lib/api/endpoints';
+import { features, gyms, invoices, plans } from '@/lib/api/endpoints';
 
 let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
 
@@ -77,5 +77,54 @@ describe('plans.update', () => {
     });
 
     expect(headersOf(0)['If-Match']).toBe('"row-7"');
+  });
+});
+
+describe('features endpoints', () => {
+  it('lists the catalogue with no query string — it is seeded, not paged', async () => {
+    fetchMock.mockResolvedValueOnce(ok([]));
+
+    await features.list();
+
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('GET');
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/features');
+  });
+
+  it('sends If-Match on a catalogue edit', async () => {
+    fetchMock.mockResolvedValueOnce(ok());
+
+    await features.update(
+      'f1',
+      {
+        name: 'CRM',
+        description: null,
+        category: 'Members',
+        defaultEnabled: true,
+        isPremium: true,
+      },
+      'v7',
+    );
+
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('PUT');
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/features/f1');
+    expect(headersOf(0)['If-Match']).toBe('"v7"');
+  });
+
+  it('sends NO If-Match when setting a gym’s features — each override is its own aggregate', async () => {
+    fetchMock.mockResolvedValueOnce(ok([]));
+
+    await gyms.setFeatures('g1', { features: [{ key: 'crm', isEnabled: true, reason: 'trial' }] });
+
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('PUT');
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/gyms/g1/features');
+    expect(headersOf(0)['If-Match']).toBeUndefined();
+  });
+
+  it('sends If-Match when setting a plan’s contents', async () => {
+    fetchMock.mockResolvedValueOnce(ok());
+
+    await plans.setFeatures('p1', { features: [{ key: 'crm', isEnabled: null }] }, 'v3');
+
+    expect(headersOf(0)['If-Match']).toBe('"v3"');
   });
 });
