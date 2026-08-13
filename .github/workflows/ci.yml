@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # All three long-lived branches, not just main. The branch model is
+    # feature/* -> development -> staging -> main, so development is where work actually lands and
+    # main is the last place a break should be discovered. Running only on main meant an increment
+    # could sit on development for days, fully merged, with CI never having seen it — which is
+    # precisely what happened to F4's twenty commits.
+    branches: [main, staging, development]
   pull_request:
 
 jobs:
