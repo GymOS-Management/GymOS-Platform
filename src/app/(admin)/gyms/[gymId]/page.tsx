@@ -15,6 +15,7 @@ import { PageHeader } from '@/components/layout/page-header';
 import { BrandingForm } from '@/features/gyms/branding-form';
 import { GymForm, type GymFormValues } from '@/features/gyms/gym-form';
 import { GymStatusActions } from '@/features/gyms/gym-status-actions';
+import { GymFeaturesTab } from '@/features/feature-flags/gym-features-tab';
 import { InvoiceTable } from '@/features/invoices/invoice-table';
 import { AssignPlanDialog } from '@/features/subscriptions/assign-dialog';
 import { HistoryList } from '@/features/subscriptions/history-list';
@@ -89,6 +90,11 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="subscription">Subscription</TabsTrigger>
+          {/* `features` is absent (not merely empty) for a caller without `features.read` — M4.1 made
+              the block optional on the gym detail response. Keying this on a permission check alone
+              would show a gyms.read-only role an empty tab with no explanation; keying it on the
+              block's presence tells the honest story instead. */}
+          {gym.features != null && <TabsTrigger value="features">Features</TabsTrigger>}
           <TabsTrigger value="invoices">Invoices</TabsTrigger>
         </TabsList>
 
@@ -114,6 +120,12 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
         <TabsContent value="subscription">
           <SubscriptionTab gymId={gym.id} />
         </TabsContent>
+
+        {gym.features != null && (
+          <TabsContent value="features">
+            <FeaturesTab gymId={gym.id} />
+          </TabsContent>
+        )}
 
         <TabsContent value="invoices">
           <InvoicesTab gymId={gym.id} />
@@ -337,6 +349,16 @@ function SubscriptionTab({ gymId }: { gymId: string }) {
       </Card>
     </div>
   );
+}
+
+/**
+ * Wraps `GymFeaturesTab` only to read the `features.manage` permission — kept as its own component
+ * (rather than calling `usePermission` inline in `GymDetailPage`'s JSX) so the hook is always called
+ * whenever this tab renders, never skipped depending on whether the gym detail response carried a
+ * `features` block.
+ */
+function FeaturesTab({ gymId }: { gymId: string }) {
+  return <GymFeaturesTab gymId={gymId} canManage={usePermission('features.manage')} />;
 }
 
 /**
