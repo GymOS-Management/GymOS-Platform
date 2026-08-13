@@ -3,12 +3,11 @@
 import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { FormField, applyProblemToForm } from '@/components/forms/form-field';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 
 /**
  * One form for creating and editing a plan, the only structural difference being the code — which
@@ -134,7 +133,7 @@ export function PlanForm({
       await onSubmit(values);
     } catch (error) {
       if (!applyProblemToForm(error, setError, FIELDS)) {
-        toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+        toastApiError(error);
       }
     }
   });

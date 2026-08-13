@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/feedback/confirm-dialogs';
 import { plans } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import { RequirePermission } from '@/lib/auth/session';
 import type { PlanDetail } from '@/types/api';
 
@@ -46,7 +46,7 @@ export function PlanStatusActions({
   const [busy, setBusy] = useState(false);
 
   const fail = (error: unknown) => {
-    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+    toastApiError(error);
   };
 
   const activate = async () => {

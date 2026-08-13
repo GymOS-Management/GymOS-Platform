@@ -10,10 +10,10 @@ import { Input } from '@/components/ui/input';
 import { DataTable, Pagination, type Column } from '@/components/data/data-table';
 import { EmptyState } from '@/components/data/empty-state';
 import { StatusBadge } from '@/components/data/status-badge';
+import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
 import { useDebounced } from '@/hooks/use-debounced';
 import { plans } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
 import { RequirePermission } from '@/lib/auth/session';
 import type { PlanListItem } from '@/types/api';
 
@@ -123,9 +123,7 @@ export default function PlansPage() {
       </div>
 
       {query.isError ? (
-        <p className="text-muted-foreground text-sm">
-          {query.error instanceof ApiError ? query.error.message : 'Something went wrong.'}
-        </p>
+        <ApiErrorText error={query.error} />
       ) : (
         <>
           <DataTable

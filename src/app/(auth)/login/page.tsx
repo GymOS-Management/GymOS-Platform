@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/forms/form-field';
-import { ApiError } from '@/lib/api/problems';
+import { apiErrorMessage } from '@/lib/feedback/toast-api-error';
 import { useSession } from '@/lib/auth/session';
 import { resolveLandingRoute } from '@/lib/nav/items';
 
@@ -49,9 +49,7 @@ export default function LoginPage() {
       // Deliberately one banner, not a field error: the API's `auth.invalid_credentials` covers
       // unknown email, wrong password, and un-activated invitation precisely so sign-in is not an
       // account-existence oracle — and the UI must not un-blur that by pointing at a field.
-      setFailure(
-        error instanceof ApiError ? error.message : 'Something went wrong. Please try again.',
-      );
+      setFailure(apiErrorMessage(error));
     }
   });
 

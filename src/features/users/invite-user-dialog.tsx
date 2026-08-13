@@ -15,7 +15,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { FormField, applyProblemToForm } from '@/components/forms/form-field';
 import { roles, users } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 
 /**
  * Invites an administrator. There is deliberately no password field anywhere in this flow: the
@@ -70,7 +70,7 @@ export function InviteUserDialog({
     },
     onError: (error) => {
       if (!applyProblemToForm(error, setError, ['email', 'firstName', 'lastName'] as const)) {
-        toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+        toastApiError(error);
       }
     },
   });

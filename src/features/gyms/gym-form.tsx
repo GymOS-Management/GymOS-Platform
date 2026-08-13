@@ -1,11 +1,10 @@
 'use client';
 
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FormField, applyProblemToForm } from '@/components/forms/form-field';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import type { GymDetail } from '@/types/api';
 
 /**
@@ -78,7 +77,7 @@ export function GymForm({
       await onSubmit(values);
     } catch (error) {
       if (!applyProblemToForm(error, setError, FIELDS)) {
-        toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+        toastApiError(error);
       }
     }
   });

@@ -12,11 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { StatusBadge } from '@/components/data/status-badge';
+import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { ConfirmDialog } from '@/components/feedback/confirm-dialogs';
 import { FormField } from '@/components/forms/form-field';
 import { PageHeader } from '@/components/layout/page-header';
 import { roles as rolesApi, users } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import { RequirePermission, usePermission, useSession } from '@/lib/auth/session';
 import { formatDateTime, formatRelative } from '@/lib/utils/format';
 import type { UserDetail } from '@/types/api';
@@ -42,9 +44,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ userId: s
     return (
       <PageHeader
         title="Administrator unavailable"
-        description={
-          query.error instanceof ApiError ? query.error.message : 'Something went wrong.'
-        }
+        description={<ApiErrorText error={query.error} />}
       />
     );
   }
@@ -102,8 +102,7 @@ function UserLifecycleActions({ user }: { user: UserDetail }) {
       toast.success(`${user.firstName} ${user.lastName} suspended; their sessions have ended.`);
       await refresh();
     },
-    onError: (error) =>
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
+    onError: (error) => toastApiError(error),
   });
 
   const reactivate = useMutation({
@@ -112,8 +111,7 @@ function UserLifecycleActions({ user }: { user: UserDetail }) {
       toast.success(`${user.firstName} ${user.lastName} reactivated.`);
       await refresh();
     },
-    onError: (error) =>
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
+    onError: (error) => toastApiError(error),
   });
 
   /**
@@ -126,15 +124,13 @@ function UserLifecycleActions({ user }: { user: UserDetail }) {
       toast.success(
         `A new activation link has been sent to ${user.email}. It replaces the last one.`,
       ),
-    onError: (error) =>
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
+    onError: (error) => toastApiError(error),
   });
 
   const sendPasswordReset = useMutation({
     mutationFn: () => users.sendPasswordReset(user.id),
     onSuccess: () => toast.success(`A password-reset link has been sent to ${user.email}.`),
-    onError: (error) =>
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.'),
+    onError: (error) => toastApiError(error),
   });
 
   if (isSelf) {
@@ -234,7 +230,7 @@ function NameCard({ user }: { user: UserDetail }) {
       toast.success('Name updated.');
       await queryClient.invalidateQueries({ queryKey: ['users'] });
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+      toastApiError(error);
     }
   });
 
@@ -309,7 +305,7 @@ function RolesCard({ user }: { user: UserDetail }) {
         });
         return;
       }
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+      toastApiError(error);
     },
   });
 

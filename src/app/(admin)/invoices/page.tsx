@@ -13,11 +13,11 @@ import {
 } from '@/components/ui/select';
 import { Pagination } from '@/components/data/data-table';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
 import { InvoiceTable } from '@/features/invoices/invoice-table';
 import { useDebounced } from '@/hooks/use-debounced';
 import { invoices } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
 import { INVOICE_STATUSES } from '@/types/api';
 
 const PAGE_SIZE = 25;
@@ -111,9 +111,7 @@ export default function InvoicesPage() {
       {query.isPending ? (
         <Skeleton className="h-64 w-full" aria-busy="true" />
       ) : query.isError ? (
-        <p className="text-muted-foreground text-sm">
-          {query.error instanceof ApiError ? query.error.message : 'Something went wrong.'}
-        </p>
+        <ApiErrorText error={query.error} />
       ) : (
         <>
           <InvoiceTable

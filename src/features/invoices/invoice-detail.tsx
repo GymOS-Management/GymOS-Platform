@@ -9,11 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable, type Column } from '@/components/data/data-table';
 import { StatusBadge } from '@/components/data/status-badge';
+import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
 import { MarkPaidDialog } from '@/features/invoices/mark-paid-dialog';
 import { VoidDialog } from '@/features/invoices/void-dialog';
 import { invoices } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import { RequirePermission } from '@/lib/auth/session';
 import { newIdempotencyKey } from '@/lib/billing/idempotency';
 import { formatDate, formatMoney } from '@/lib/utils/format';
@@ -40,7 +41,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   });
 
   const fail = (error: unknown) => {
-    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+    toastApiError(error);
   };
 
   /**
@@ -107,12 +108,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
   if (query.isError) {
     const error = query.error;
-    return (
-      <PageHeader
-        title="Invoice unavailable"
-        description={error instanceof ApiError ? error.message : 'Something went wrong.'}
-      />
-    );
+    return <PageHeader title="Invoice unavailable" description={<ApiErrorText error={error} />} />;
   }
 
   const invoice = query.data;

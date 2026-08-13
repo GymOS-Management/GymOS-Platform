@@ -24,7 +24,7 @@ import {
 import { DataTable, type Column } from '@/components/data/data-table';
 import { EmptyState } from '@/components/data/empty-state';
 import { plans } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import { formatMoney } from '@/lib/utils/format';
 import type { PlanDetail, PlanPriceDetail } from '@/types/api';
 
@@ -81,7 +81,7 @@ export function PriceEditor({
   };
 
   const fail = (error: unknown) => {
-    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+    toastApiError(error);
   };
 
   const submitAdd = async () => {

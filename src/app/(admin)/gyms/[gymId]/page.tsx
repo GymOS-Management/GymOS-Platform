@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/data/status-badge';
 import { EmptyState } from '@/components/data/empty-state';
+import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
 import { BrandingForm } from '@/features/gyms/branding-form';
 import { GymForm, type GymFormValues } from '@/features/gyms/gym-form';
@@ -21,6 +22,7 @@ import { SubscriptionActions } from '@/features/subscriptions/subscription-actio
 import { SubscriptionCard } from '@/features/subscriptions/subscription-card';
 import { gyms, invoices, plans, subscriptions } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import { usePermission } from '@/lib/auth/session';
 import { formatDateTime } from '@/lib/utils/format';
 import type { GymDetail, SubscriptionDetail } from '@/types/api';
@@ -54,12 +56,7 @@ export default function GymDetailPage({ params }: { params: Promise<{ gymId: str
 
   if (query.isError) {
     const error = query.error;
-    return (
-      <PageHeader
-        title="Gym unavailable"
-        description={error instanceof ApiError ? error.message : 'Something went wrong.'}
-      />
-    );
+    return <PageHeader title="Gym unavailable" description={<ApiErrorText error={error} />} />;
   }
 
   const gym = query.data;
@@ -258,7 +255,7 @@ function SubscriptionTab({ gymId }: { gymId: string }) {
   };
 
   const fail = (error: unknown) => {
-    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+    toastApiError(error);
   };
 
   const resume = useMutation({
@@ -304,11 +301,7 @@ function SubscriptionTab({ gymId }: { gymId: string }) {
       );
     }
 
-    return (
-      <p className="text-muted-foreground text-sm">
-        {error instanceof ApiError ? error.message : 'Something went wrong.'}
-      </p>
-    );
+    return <ApiErrorText error={error} />;
   }
 
   const subscription = subscriptionQuery.data;
@@ -371,12 +364,7 @@ function InvoicesTab({ gymId }: { gymId: string }) {
   }
 
   if (query.isError) {
-    const error = query.error;
-    return (
-      <p className="text-muted-foreground text-sm">
-        {error instanceof ApiError ? error.message : 'Something went wrong.'}
-      </p>
-    );
+    return <ApiErrorText error={query.error} />;
   }
 
   return (

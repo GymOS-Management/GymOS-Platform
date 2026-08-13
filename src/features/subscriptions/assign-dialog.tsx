@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { plans, subscriptions } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import type { SubscriptionDetail } from '@/types/api';
 
 // `plans.list` defaults to a 25-row page; the API caps `pageSize` at 200 (`PagedResult.MaxPageSize`,
@@ -132,7 +132,7 @@ export function AssignPlanDialog({
       setOpen(false);
       reset();
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+      toastApiError(error);
     } finally {
       setSaving(false);
     }

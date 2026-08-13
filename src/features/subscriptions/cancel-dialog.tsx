@@ -14,7 +14,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { subscriptions } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import type { SubscriptionDetail } from '@/types/api';
 
 /**
@@ -56,7 +56,7 @@ export function CancelSubscriptionDialog({
       setReason('');
       setImmediately(false);
     } catch (error) {
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+      toastApiError(error);
     } finally {
       setSaving(false);
     }

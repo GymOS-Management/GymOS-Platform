@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StatusBadge } from '@/components/data/status-badge';
+import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
 import {
   PlanForm,
@@ -53,12 +54,7 @@ export default function PlanDetailPage({ params }: { params: Promise<{ planId: s
 
   if (query.isError) {
     const error = query.error;
-    return (
-      <PageHeader
-        title="Plan unavailable"
-        description={error instanceof ApiError ? error.message : 'Something went wrong.'}
-      />
-    );
+    return <PageHeader title="Plan unavailable" description={<ApiErrorText error={error} />} />;
   }
 
   const plan = query.data;

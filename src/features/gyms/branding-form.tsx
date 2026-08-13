@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { FormField, applyProblemToForm } from '@/components/forms/form-field';
 import { gyms } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import type { GymDetail } from '@/types/api';
 
 /**
@@ -88,7 +89,7 @@ export function BrandingForm({ gym }: { gym: GymDetail }) {
       }
 
       if (!applyProblemToForm(error, setError, FIELDS)) {
-        toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+        toastApiError(error);
       }
     },
   });

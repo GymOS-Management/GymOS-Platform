@@ -8,7 +8,7 @@ import { ConfirmDialog } from '@/components/feedback/confirm-dialogs';
 import { AssignPlanDialog } from '@/features/subscriptions/assign-dialog';
 import { CancelSubscriptionDialog } from '@/features/subscriptions/cancel-dialog';
 import { subscriptions } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import type { SubscriptionDetail } from '@/types/api';
 
 /**
@@ -35,7 +35,7 @@ export function SubscriptionActions({
   const [pastDueDialog, setPastDueDialog] = useState<'mark' | 'clear' | null>(null);
 
   const fail = (error: unknown) => {
-    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+    toastApiError(error);
   };
 
   const setPaymentState = useMutation({

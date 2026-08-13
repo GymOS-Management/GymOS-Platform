@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { ConfirmDialog, DestructiveConfirmDialog } from '@/components/feedback/confirm-dialogs';
 import { gyms } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
+import { apiErrorMessage, toastApiError } from '@/lib/feedback/toast-api-error';
 import { RequirePermission } from '@/lib/auth/session';
 import type { GymDetail } from '@/types/api';
 
@@ -36,7 +36,7 @@ export function GymStatusActions({ gym }: { gym: GymDetail }) {
   };
 
   const fail = (error: unknown) => {
-    toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+    toastApiError(error);
   };
 
   const activate = useMutation({
@@ -77,7 +77,7 @@ export function GymStatusActions({ gym }: { gym: GymDetail }) {
     onError: (error) => {
       // A wrong confirmation stays *in the dialog*, next to the field the operator must fix.
       // Closing and toasting would make them reopen and retype everything.
-      setDeleteError(error instanceof ApiError ? error.message : 'Something went wrong.');
+      setDeleteError(apiErrorMessage(error));
     },
   });
 

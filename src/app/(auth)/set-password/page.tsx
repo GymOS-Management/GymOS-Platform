@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { FormField } from '@/components/forms/form-field';
 import { auth } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
+import { apiErrorMessage } from '@/lib/feedback/toast-api-error';
 
 interface SetPasswordForm {
   newPassword: string;
@@ -114,8 +115,8 @@ function SetPasswordForm() {
       // person tries again against a link that can no longer work.
       setFailure(
         error instanceof ApiError
-          ? `${error.message} This link has now been used — ask an administrator for a new one.`
-          : 'Something went wrong. Please try again.',
+          ? `${apiErrorMessage(error)} This link has now been used — ask an administrator for a new one.`
+          : apiErrorMessage(error),
       );
     }
   });

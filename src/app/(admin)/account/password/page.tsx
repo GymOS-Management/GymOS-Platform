@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { FormField } from '@/components/forms/form-field';
 import { auth } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
+import { toastApiError } from '@/lib/feedback/toast-api-error';
 import { useSession } from '@/lib/auth/session';
 import { PageHeader } from '@/components/layout/page-header';
 
@@ -45,7 +46,7 @@ export default function ChangePasswordPage() {
         setError('newPassword', { type: 'server', message: error.message });
         return;
       }
-      toast.error(error instanceof ApiError ? error.message : 'Something went wrong.');
+      toastApiError(error);
     }
   });
 
