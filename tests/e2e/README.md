@@ -117,3 +117,10 @@ container is running the suite; `docker rm -f` above (with no volume declared) d
 with the container. If the same container stays up across many runs instead — the common case while
 iterating on this suite — expect the gym and plan lists to grow with every run; that is the cost of D6,
 not a leak to chase.
+
+`feature-flags-journey.spec.ts` provisions a gym (`e2e-flags-<project>-<timestamp>`) and a plan
+(`E2E_FLAGS_<PROJECT>_<timestamp>`) with a price, the same way and for the same reasons as above, and
+likewise deletes neither. It also edits the platform's shared, seeded-once feature catalogue directly —
+a description and a default-on/off flip — which are `docker rm -f`'s to undo as well: the catalogue is
+insert-only (`FeatureCatalogSeeder`), so a restart does not revert an operator's edit, and the suite's
+own assertions are written to expect "the opposite of whatever it already was" for exactly this reason.
