@@ -274,12 +274,12 @@ test.describe.serial('feature flags journey', () => {
     await signIn(page);
     await openNavLink(page, isMobile, 'Features');
 
-    await expect(page.getByRole('heading', { name: 'Features', level: 1 })).toBeVisible(
-      FIRST_LOAD,
-    );
+    await expect(page.getByRole('heading', { name: 'Features', level: 1 })).toBeVisible(FIRST_LOAD);
 
     for (const category of ALL_CATEGORIES) {
-      await expect(page.getByRole('heading', { level: 3, name: category, exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('heading', { level: 3, name: category, exact: true }),
+      ).toBeVisible();
     }
 
     // Every key renders exactly once — twelve distinct rows, not merely "some rows under six
@@ -414,7 +414,7 @@ test.describe.serial('feature flags journey', () => {
     await expect(row.getByText(/Granted \d+ days? ago/)).toHaveCount(0);
   });
 
-  test("on the plan, Excluded and Default both persist after a reload", async ({
+  test('on the plan, Excluded and Default both persist after a reload', async ({
     page,
     isMobile,
   }) => {
