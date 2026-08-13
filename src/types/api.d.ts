@@ -213,7 +213,7 @@ export interface paths {
         };
         /**
          * Is this activation link still usable?
-         * @description Lets the console show "this link has expired, ask for another" instead of a form that fails on submit. Answers **validity and nothing else** — no email, no name, no roles — so holding a token reveals nothing about the account behind it. Every failure (unknown, expired, already used, account gone or suspended) returns the same `410` with the same body, deliberately: a distinct "expired" would confirm the token had once been real.
+         * @description Lets the console show "this link has expired, ask for another" instead of a form that fails on submit. Answers **validity and nothing else** — no email, no name, no roles — so holding a token reveals nothing about the account behind it. Every failure (unknown, expired, already used, account gone or suspended) returns the same `404` with the same `auth.link_not_usable` body, deliberately: a distinct "expired" would confirm the token had once been real.
          */
         get: operations["CheckActivationLink"];
         put?: never;
@@ -985,7 +985,7 @@ export interface paths {
         put?: never;
         /**
          * Send the activation link again
-         * @description For an administrator who has not activated yet. Issuing a new link invalidates the previous one, so at most one is ever live. Refused with `users.not_pending_activation` for an account that has already activated — that case wants a password reset instead. `X-Invitation-Email` reports whether the message reached the mail server; it never means delivered.
+         * @description For an administrator who has not activated yet. Issuing a new link invalidates the previous one, so at most one is ever live. Refused with `users.not_pending_activation` for an account that has already activated — that case wants a password reset instead. `X-Invitation-Email` reports `sent`, `failed`, or `disabled` (email is switched off server-side, so no link exists to follow); `sent` means the mail server accepted it and never means delivered.
          */
         post: operations["ResendInvitation"];
         delete?: never;

@@ -59,6 +59,14 @@ export type UpdatePlanRequest = Schemas['UpdatePlanRequest'];
 export type SetPlanPriceRequest = Schemas['SetPlanPriceRequest'];
 export type PagedPlans = Schemas['PagedResultOfPlanListItem'];
 
+export type FeatureListItem = Schemas['FeatureListItem'];
+export type ResolvedFeatureDetail = Schemas['ResolvedFeatureDetail'];
+export type UpdateFeatureRequest = Schemas['UpdateFeatureRequest'];
+export type SetPlanFeaturesRequest = Schemas['SetPlanFeaturesRequest'];
+export type SetGymFeaturesRequest = Schemas['SetGymFeaturesRequest'];
+export type PlanFeatureRequest = Schemas['PlanFeatureRequest'];
+export type GymFeatureRequest = Schemas['GymFeatureRequest'];
+
 export type SubscriptionDetail = Schemas['SubscriptionDetail'];
 export type GymSubscriptionSummary = Schemas['GymSubscriptionSummary'];
 export type PendingPlanChangeDetail = Schemas['PendingPlanChangeDetail'];
