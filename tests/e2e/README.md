@@ -46,7 +46,40 @@ wrong for this backend specifically. The refresh cookie **rotates on every use**
 treated as an attack that revokes the whole chain. A shared cookie file goes stale the moment the first
 context refreshes, and the failure would look like random logouts rather than like the design working.
 
-## 3. The suite
+## 3. Analytics rows, seeded for you
+
+Nothing to run: `globalSetup` (`tests/e2e/global-setup.ts`) writes `platform.daily_platform_stats`
+before the browsers start, from `tests/e2e/seed-analytics.sql`.
+
+It is seeded rather than waited for because `/analytics/*` reads **only** that read model, which
+`PlatformStatsJob` compiles once a night for _yesterday_ — and the job host is disabled during the
+suite anyway (above). Mocking the response instead would test the charts against a fake and prove
+nothing about the proxy or the contract, which is the one thing this suite exists to prove.
+
+**The seed's shape is load-bearing, not arbitrary.** It writes 14 candidate days ending yesterday and
+leaves **one out** (`CURRENT_DATE - 7`), giving 13 rows with a single interior gap. That gap is what
+proves F3-DESIGN **D3** — a missing day is drawn as a break and named in words — end to end rather
+than only in the unit suite. The specs assert the sentence that gap produces, so:
+
+- every date is relative to `CURRENT_DATE`, because hard-coded dates would drift out of the console's
+  default range (last 30 days) and quietly return the specs to asserting nothing;
+- two currencies are written, because against a single-currency screen a summed `Total` column and a
+  per-currency column are the same column, and **D2** would be untestable;
+- the population three (`active`/`suspended`/`provisioning`) sum to `total_gyms`, because the Growth
+  screen stacks them to that height (**D4**).
+
+`global-setup.ts` verifies the shape it just wrote and **throws** if it is not 13 rows with exactly 1
+missing day, so drift in the SQL surfaces as one clear message before the browser starts rather than
+as a puzzling assertion failure later. It reaches the database with `docker exec` rather than a
+Postgres client library — one INSERT is not worth a new dependency, and it needs no `psql` on the
+host. Override `E2E_DB_CONTAINER` (default `gymos-e2e-db`), `E2E_DB_USER`, or `E2E_DB_NAME` if yours
+differ.
+
+The rows are deleted and rewritten on every run. That is safe precisely because this table is a read
+model that is rebuilt nightly and never backfilled, so a test database's copy is disposable by
+definition.
+
+## 4. The suite
 
 ```bash
 pnpm test:e2e                      # both viewports
@@ -68,7 +101,7 @@ happily match the element nobody can see, and the failure message ("resolved to 
 Likewise, prefer a specific error node (`#slug-error`) over `getByRole('alert')`: Next renders an empty
 `role="alert"` route announcer that matches first.
 
-## Cleanup
+## 5. Cleanup
 
 ```bash
 docker rm -f gymos-e2e-db

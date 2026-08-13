@@ -5,7 +5,7 @@ import { defineConfig, devices } from '@playwright/test';
  * PostgreSQL. Nothing is mocked — the run proves the same-origin proxy, the refresh cookie, and the
  * contract all line up, which is precisely what unit tests cannot.
  *
- * Prerequisites (scripts/e2e.md): backend on :5080 with a seeded SuperAdmin
+ * Prerequisites (tests/e2e/README.md): backend on :5080 with a seeded SuperAdmin
  * (e2e@gymos.test / e2e-super-admin-password), PostgreSQL in Docker.
  *
  * Two projects on purpose: the console must *work* at 375px, not merely not crash — the mobile pass
@@ -23,6 +23,11 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  // Writes the `daily_platform_stats` rows the analytics specs assert against, including the
+  // deliberate one-day gap that proves F3-DESIGN D3 end to end. It throws rather than warning if the
+  // seed does not land, because the alternative is an empty series and a spec that once skipped over
+  // exactly that.
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: false, // The journeys share one backend's data; parallel runs would race.
   // One worker, so the desktop and mobile projects run sequentially too: two browsers hammering a
   // cold dev server's first-compile made the very first test flaky, and speed is not what E2E is for.

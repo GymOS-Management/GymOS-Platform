@@ -16,11 +16,13 @@ import { expect, test, type Page } from '@playwright/test';
  * disabled anyway (`Jobs:Enabled=false` — tests/e2e/README.md) precisely so no sweep moves state
  * mid-run.
  *
- * So the charts are asserted against **seeded rows**, and the seed must include a deliberate one-day
- * gap so D3 is proved end to end rather than only in a unit test. Until that seeding exists
- * (scripts/e2e.md), the analytics half of this journey **skips loudly rather than passing
- * vacuously** — a green spec that asserted nothing about an empty series is the failure mode
- * F3-DESIGN §9 names by name.
+ * So the charts are asserted against **seeded rows** written by `global-setup.ts` before the run: a
+ * continuous fortnight with **one day deliberately left out**, so D3 is proved end to end rather than
+ * only in a unit test. The analytics half used to skip when that seeding did not exist, on the
+ * grounds that a green spec asserting nothing about an empty series is the failure mode F3-DESIGN §9
+ * names by name. The seeding exists now, so an empty series is a **failure** instead — the skip would
+ * hide precisely the two things worth knowing, that the seed did not apply or that the default range
+ * moved off the window it writes.
  *
  * The dashboard half needs no seeding: it reads live from `gyms` and `gym_subscriptions`, so the gyms
  * the F2 journey creates are enough.
@@ -58,20 +60,35 @@ async function signIn(page: Page) {
 }
 
 /**
- * Waits for an analytics screen to stop loading, then reports whether it came back with no rows.
+ * Waits for an analytics screen to stop loading, then asserts it came back with rows.
  *
  * Checking for the empty state without waiting first is a race the skeleton always wins: the check
  * runs while the query is still in flight, sees no empty message, concludes there *is* data, and the
- * assertions after it then fail against a screen that never had any.
+ * assertions after it then fail against a screen that never had any. So both outcomes are still
+ * waited for — and then the empty one is a failure.
+ *
+ * It is a failure rather than a skip because `global-setup.ts` writes the rows before the run. An
+ * empty series now means the seed did not apply, or the default range moved off the window it
+ * writes — both of which are worth failing over, and neither of which a skip would surface.
  */
-async function isEmptySeries(page: Page): Promise<boolean> {
+async function expectSeriesLoaded(page: Page) {
   const empty = visibleText(page, /nothing was recorded in this range/i).first();
   const loaded = visibleText(page, /recorded nightly/i).first();
 
   await expect(empty.or(loaded)).toBeVisible({ timeout: 15_000 });
-
-  return empty.isVisible();
+  await expect(empty).toHaveCount(0);
 }
+
+/**
+ * D3 end to end, which is the whole reason the seed exists.
+ *
+ * The seed leaves exactly one day out of an otherwise continuous fortnight, so the note must report
+ * one missing day in one break. Asserted on the sentence the operator reads rather than on a count
+ * attribute or a path element: a chart that breaks its line but says nothing in words still leaves
+ * the reader to guess whether the platform stalled or the chart did, and the sentence is what
+ * F3-DESIGN D3 actually promises.
+ */
+const ONE_DAY_GAP = /no data was recorded for 1 day in this range \(one break in the line\)/i;
 
 test.describe('F3 — dashboard and analytics', () => {
   test('a SuperAdmin lands on the dashboard and sees live platform figures', async ({ page }) => {
@@ -110,16 +127,15 @@ test.describe('F3 — dashboard and analytics', () => {
     // D7 again, in its other half: this series is recorded, not live.
     await expect(visibleText(page, /recorded nightly|nothing was recorded/i)).toBeVisible();
 
-    const empty = await isEmptySeries(page);
+    await expectSeriesLoaded(page);
 
-    test.skip(
-      empty,
-      'No daily_platform_stats rows seeded — see the note at the top of this file. Skipped rather ' +
-        'than asserted against an empty series, which would pass without testing anything.',
-    );
+    // D3, in words, on the screen the operator reads.
+    await expect(visibleText(page, ONE_DAY_GAP)).toBeVisible();
 
     // With rows present: the table view must show the same days the chart drew, and a currency
-    // column per currency — never a combined total column (D2).
+    // column per currency — never a combined total column (D2). The seed writes two currencies for
+    // exactly this assertion: against a single-currency screen, a summed total column and a
+    // per-currency column are the same column, so the rule would be untestable here.
     await page.getByRole('button', { name: 'Table' }).click();
     await expect(page.getByRole('table')).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Date' })).toBeVisible();
@@ -157,9 +173,12 @@ test.describe('F3 — dashboard and analytics', () => {
 
     await expect(page.getByRole('heading', { name: 'Churn' })).toBeVisible(FIRST_LOAD);
 
-    const empty = await isEmptySeries(page);
+    await expectSeriesLoaded(page);
 
-    test.skip(empty, 'No daily_platform_stats rows seeded — see the note at the top of this file.');
+    // D3 again, on the other chart form: churn is a stacked column chart, where a missing day is
+    // simply an absent column and nothing about the drawing says so. The note is the only thing that
+    // does, which makes it load-bearing here rather than a repeat of the revenue assertion.
+    await expect(visibleText(page, ONE_DAY_GAP)).toBeVisible();
 
     // D5: the caveat is part of the screen, not a footnote in a document nobody opens. A chart that
     // presents two differently-clocked numbers as symmetric without saying so is the
