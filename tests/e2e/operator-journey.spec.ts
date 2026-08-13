@@ -58,11 +58,25 @@ test.describe.serial('operator journey', () => {
    * remains the fallback for a caller holding neither — asserted in the unit suite, where a role
    * without those permissions can be constructed.
    */
-  test('signs in and lands on a dashboard that has real figures on it', async ({ page }) => {
+  test('signs in and lands on a dashboard that has real figures on it', async ({
+    page,
+    isMobile,
+  }) => {
     await signIn(page);
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible();
 
     // The gyms list is still one click away, and is still where the operator does most of the work.
+    //
+    // On a phone that click starts at the drawer button. The persistent sidebar is `hidden lg:flex`
+    // (app-shell.tsx), so below `lg` its "Gyms" anchor is `display:none` — present in the DOM but
+    // outside the accessibility tree, which is why `getByRole` matches *nothing* rather than matching
+    // something unclickable. The drawer's own copy does not exist until the drawer is open. Skipping
+    // this branch is what made the mobile pass hang for the full timeout on a locator that could
+    // never resolve.
+    if (isMobile) {
+      await page.getByRole('button', { name: 'Open navigation' }).click();
+    }
+
     await page.getByRole('link', { name: 'Gyms' }).first().click();
     await expect(page.getByRole('heading', { name: 'Gyms' })).toBeVisible();
   });
