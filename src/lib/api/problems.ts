@@ -53,6 +53,23 @@ const MESSAGES: Record<string, string> = {
   'users.not_suspended': 'Only a suspended administrator can be reactivated.',
   'users.reason_required': 'Give a reason for the suspension.',
 
+  // Features (F4-DESIGN §4; codes taken from the backend's Features.md "Value rules and stable codes")
+  'features.not_found': 'That feature no longer exists.',
+  'features.invalid': 'That change was refused by a feature catalogue rule.',
+  'features.name_invalid': 'Give the feature a name of no more than 120 characters.',
+  // The server's own message names the key that lacks a reason — this sentence deliberately does
+  // not repeat or guess at that, so a screen wanting the specific key should read `ApiError.detail`
+  // rather than `.message` for this code.
+  'features.override_reason_required':
+    'Give a reason for the override — it is shown to whoever reviews it later.',
+  // The next three are defence, not a path this console can reach: every key it sends comes from the
+  // catalogue GET itself, and no endpoint accepts a caller-supplied new key. Mapped anyway, because a
+  // code arriving unmapped reads worse than one mapped for a case that cannot occur.
+  'features.unknown_key': 'That key is not in this platform’s feature catalogue.',
+  'features.duplicate_key': 'That key was given twice in the same request.',
+  'features.key_invalid':
+    'Feature keys must be lower-case snake_case and no more than 60 characters.',
+
   // Concurrency (see ApiError.isConflict for how these are surfaced)
   'concurrency.conflict':
     'Someone else changed this while you were editing. Reload to see their version, then reapply your change.',
@@ -170,4 +187,9 @@ export const FIELD_FOR_CODE: Record<string, string> = {
   'users.email_taken': 'email',
   'gyms.reason_required': 'reason',
   'users.reason_required': 'reason',
+  // `FeatureEditForm`'s field is literally `name` (feature-edit-form.tsx); mapped for correctness even
+  // though that form does not yet call `applyProblemToForm` — it receives its error as a prop from the
+  // page's mutation rather than owning one, so this entry is here for whichever form next validates a
+  // feature name against `setError`.
+  'features.name_invalid': 'name',
 };

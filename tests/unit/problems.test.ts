@@ -1,9 +1,38 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError, messageFor, parseProblem } from '@/lib/api/problems';
+import { ApiError, FIELD_FOR_CODE, messageFor, parseProblem } from '@/lib/api/problems';
 
 describe('problem-code mapping (D8)', () => {
   it('maps a known code to its sentence regardless of the response prose', () => {
     expect(messageFor('gyms.slug_taken', 'server prose', 409)).toContain('already in use');
+  });
+
+  describe('the features.* codes (F4-DESIGN §4)', () => {
+    it('maps a missing feature', () => {
+      expect(messageFor('features.not_found', 'server prose', 404)).toContain('no longer exists');
+    });
+
+    it('maps a missing override reason without repeating the key the server names', () => {
+      // The server's own detail names the offending key; the mapped copy must not contradict or
+      // duplicate that, so it stays generic and never echoes back the server's prose.
+      const message = messageFor(
+        'features.override_reason_required',
+        "Key 'pos' requires a reason.",
+        400,
+      );
+
+      expect(message).toMatch(/reason/i);
+      expect(message).not.toBe("Key 'pos' requires a reason.");
+    });
+
+    it('maps the three codes that are defence rather than a reachable path', () => {
+      expect(messageFor('features.unknown_key', 'server prose', 400)).toMatch(/catalogue/i);
+      expect(messageFor('features.duplicate_key', 'server prose', 400)).toMatch(/twice/i);
+      expect(messageFor('features.key_invalid', 'server prose', 400)).toMatch(/snake_case/i);
+    });
+
+    it('routes a name-length refusal to the name field', () => {
+      expect(FIELD_FOR_CODE['features.name_invalid']).toBe('name');
+    });
   });
 
   it('falls back to the response detail for a code it has never heard of', () => {
