@@ -187,9 +187,4 @@ export const FIELD_FOR_CODE: Record<string, string> = {
   'users.email_taken': 'email',
   'gyms.reason_required': 'reason',
   'users.reason_required': 'reason',
-  // `FeatureEditForm`'s field is literally `name` (feature-edit-form.tsx); mapped for correctness even
-  // though that form does not yet call `applyProblemToForm` — it receives its error as a prop from the
-  // page's mutation rather than owning one, so this entry is here for whichever form next validates a
-  // feature name against `setError`.
-  'features.name_invalid': 'name',
 };

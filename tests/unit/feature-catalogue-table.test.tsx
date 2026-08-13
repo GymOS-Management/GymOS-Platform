@@ -42,6 +42,20 @@ describe('the catalogue', () => {
     expect(screen.queryByText('0')).toBeNull();
   });
 
+  it('still renders a genuine zero — only `null` is absent, not the number 0', () => {
+    // The other half of the same guard: `if (!value) return null` would also pass the test above,
+    // but would silently hide a real "0 gyms use this" from an operator who needs to see it.
+    render(
+      <FeatureCatalogueTable
+        items={[feature({ adoptionCount: 0, overrideCount: 0 })]}
+        canManage
+        onEdit={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByText('0')).toHaveLength(2);
+  });
+
   it('marks a feature no module declares any more, and refuses to edit it', () => {
     render(
       <FeatureCatalogueTable items={[feature({ isDeclared: false })]} canManage onEdit={vi.fn()} />,

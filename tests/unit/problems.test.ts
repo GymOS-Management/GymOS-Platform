@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError, FIELD_FOR_CODE, messageFor, parseProblem } from '@/lib/api/problems';
+import { ApiError, messageFor, parseProblem } from '@/lib/api/problems';
 
 describe('problem-code mapping (D8)', () => {
   it('maps a known code to its sentence regardless of the response prose', () => {
@@ -28,10 +28,6 @@ describe('problem-code mapping (D8)', () => {
       expect(messageFor('features.unknown_key', 'server prose', 400)).toMatch(/catalogue/i);
       expect(messageFor('features.duplicate_key', 'server prose', 400)).toMatch(/twice/i);
       expect(messageFor('features.key_invalid', 'server prose', 400)).toMatch(/snake_case/i);
-    });
-
-    it('routes a name-length refusal to the name field', () => {
-      expect(FIELD_FOR_CODE['features.name_invalid']).toBe('name');
     });
   });
 

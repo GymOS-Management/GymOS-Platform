@@ -181,7 +181,7 @@ export function FeatureEditForm({
                 <span>{feature.adoptionCount} gyms currently resolve it on. </span>
               )}
               {feature.overrideCount !== null && (
-                <span>{feature.overrideCount} hold an override.</span>
+                <span>{feature.overrideCount} gyms hold an override.</span>
               )}
             </p>
           )}

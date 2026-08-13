@@ -82,4 +82,23 @@ describe('editing a catalogue entry', () => {
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ defaultEnabled: true }));
   });
+
+  it('reads the override count correctly when adoption is null and override is not', async () => {
+    // A bare "3 hold an override." has no subject when the adoption sentence beside it is absent.
+    const feature = { ...crm, adoptionCount: null, overrideCount: 3 } as FeatureListItem;
+    render(
+      <FeatureEditForm
+        feature={feature}
+        busy={false}
+        error={null}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText(/enabled by default/i));
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(screen.getByText(/3 gyms hold an override/i)).toBeVisible();
+  });
 });
