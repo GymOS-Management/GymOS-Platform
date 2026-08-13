@@ -192,3 +192,65 @@ describe('GymFeaturesTab — container', () => {
     expect(screen.queryByText('Override')).not.toBeInTheDocument();
   });
 });
+
+describe('correcting an override’s reason', () => {
+  it('seeds the reason box with the override’s existing reason, so it can be edited', () => {
+    // Blank-seeding made the stored reason invisible in the field that edits it: an operator
+    // correcting "temp" had to retype the whole justification from what the row displayed above.
+    render(<GymFeaturesList features={[overridden]} canManage now={NOW} onSubmit={vi.fn()} />);
+
+    expect(screen.getByLabelText(/reason for crm/i)).toHaveValue('90-day goodwill trial');
+  });
+
+  it('submits a reason-only correction, with the value left alone', async () => {
+    // The backend supports exactly this write — it upserts an existing override with a new reason
+    // while the value still differs from the plan's. Filtering submissions on value change alone
+    // made a supported, audit-relevant edit unreachable, and silently: no request, no message.
+    const onSubmit = vi.fn();
+    render(<GymFeaturesList features={[overridden]} canManage now={NOW} onSubmit={onSubmit} />);
+
+    const reason = screen.getByLabelText(/reason for crm/i);
+    await userEvent.clear(reason);
+    await userEvent.type(reason, 'extended to year end, agreed with the owner');
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSubmit).toHaveBeenCalledWith([
+      { key: 'crm', isEnabled: true, reason: 'extended to year end, agreed with the owner' },
+    ]);
+  });
+
+  it('refuses to blank an existing override’s reason', async () => {
+    // An override with no reason is refused by the server, and an exception whose justification has
+    // been erased is exactly what the audit trail exists to prevent.
+    const onSubmit = vi.fn();
+    render(<GymFeaturesList features={[overridden]} canManage now={NOW} onSubmit={onSubmit} />);
+
+    await userEvent.clear(screen.getByLabelText(/reason for crm/i));
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByText(/reason is required/i)).toBeVisible();
+  });
+
+  it('does not resubmit an override whose reason is merely reformatted', async () => {
+    // Trailing whitespace is not an edit. Sending it would rewrite the override's author and
+    // timestamp for no change, which is a lie in the audit trail.
+    const onSubmit = vi.fn();
+    render(<GymFeaturesList features={[overridden]} canManage now={NOW} onSubmit={onSubmit} />);
+
+    await userEvent.type(screen.getByLabelText(/reason for crm/i), '   ');
+    await userEvent.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('freezes the editing controls while a save is in flight', async () => {
+    // Only Save was gated on `busy`; the switch and the reason box stayed live, so anything typed
+    // during the request was wiped when the response re-seeded the draft — the same failure class
+    // already fixed on the plan card, left standing on this one.
+    render(<GymFeaturesList features={[overridden]} canManage now={NOW} busy onSubmit={vi.fn()} />);
+
+    expect(screen.getByRole('switch', { name: /crm/i })).toBeDisabled();
+    expect(screen.getByLabelText(/reason for crm/i)).toBeDisabled();
+  });
+});

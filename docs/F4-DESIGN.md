@@ -187,16 +187,27 @@ The two vocabularies are deliberately split — _granting one gym an exception i
 administration; deciding what a plan includes is pricing the product_ — so F4 degrades per surface,
 following F3's D6:
 
-| Surface               | Read            | Write             |
-| --------------------- | --------------- | ----------------- |
-| `/features` catalogue | `features.read` | `features.manage` |
-| Gym `Features` tab    | `features.read` | `features.manage` |
-| Plan `Features` card  | `billing.read`  | `billing.manage`  |
+| Surface               | Read                                   | Write             |
+| --------------------- | -------------------------------------- | ----------------- |
+| `/features` catalogue | `features.read`                        | `features.manage` |
+| Gym `Features` tab    | `features.read`                        | `features.manage` |
+| Plan `Features` card  | `billing.read` **and** `features.read` | `billing.manage`  |
+
+**Corrected after F4's review**, which caught this table contradicting the code. Writing plan
+contents is `billing.manage` alone, as stated — but _reading_ the card needs `features.read` too, and
+this row originally claimed it did not. The card cannot be drawn from `GET /plans/{id}/features`
+alone: that response carries only the keys the plan already has an opinion about, and no
+`defaultEnabled`. Every feature the plan is silent on — the majority, and the entire third state D2
+exists to surface — plus the "Default today" hint come from `GET /features`, which the backend gates
+on `features.read`. A principal with `billing.read` and no `features.read` would have taken a 403 and
+seen the card collapse into an error.
 
 Consequences worth stating, because they are the point of the split: a **SupportAgent**
 (`features.read` only) gets both features surfaces read-only and no plan card — enough to answer "why
 is POS off?" without authority to reprice. A **BillingAdmin** (`features.read` + `billing.*`) can set
-plan contents but cannot edit the catalogue or grant an exception.
+plan contents but cannot edit the catalogue or grant an exception. No seeded role holds `billing.read`
+without `features.read`, which is exactly why the mismatch was invisible until someone read the two
+against each other.
 
 Gym detail's `features` block is **absent, not gated**, for a caller without `features.read` (M4.1
 task 4) — the route needs only `gyms.read`. The tab is therefore rendered from the block's presence,

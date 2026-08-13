@@ -28,11 +28,24 @@ interface Draft {
   reason: string;
 }
 
+/**
+ * The reason as stored, or empty when this feature has no override.
+ *
+ * Only an override carries one: `overrideReason` is null unless the override decided the answer.
+ */
+function storedReason(feature: ResolvedFeatureDetail): string {
+  return feature.overrideReason ?? '';
+}
+
 function initialDraft(features: readonly ResolvedFeatureDetail[]): Record<string, Draft> {
   const draft: Record<string, Draft> = {};
 
   for (const feature of features) {
-    draft[feature.featureId] = { enabled: feature.enabled, reason: '' };
+    // Seeded with the stored reason rather than blank, so an existing justification can be edited
+    // in the field that edits it. Seeding blank made the reason visible in the row above and absent
+    // from the input, which meant correcting a two-word placeholder required retyping the whole
+    // sentence — and made a reason-only correction indistinguishable from an untouched form.
+    draft[feature.featureId] = { enabled: feature.enabled, reason: storedReason(feature) };
   }
 
   return draft;
@@ -90,9 +103,33 @@ export function GymFeaturesList({
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
 
-    const changed = features.filter(
-      (feature) => draft[feature.featureId]?.enabled !== feature.enabled,
-    );
+    // Two kinds of edit are submittable, and only the first used to be.
+    //
+    // A **value change** is the obvious one. A **reason correction on an existing override** is the
+    // other, and the backend supports it directly: it upserts the override with the new reason
+    // whenever the value still differs from what the plan gives. Filtering on the value alone made
+    // that write unreachable — an operator could retype the justification on a row reading "temp",
+    // click Save, and get nothing at all. On a surface whose whole purpose is recording *why* an
+    // exception exists, an uncorrectable reason is the wrong thing to be unable to fix.
+    //
+    // Restricted to `source === 'Override'` deliberately: a row resolving through the plan or the
+    // platform default has no override to carry a reason, so sending one would either withdraw
+    // nothing or create an exception the operator never asked for.
+    const changed = features.filter((feature) => {
+      const pending = draft[feature.featureId];
+
+      if (!pending) {
+        return false;
+      }
+
+      if (pending.enabled !== feature.enabled) {
+        return true;
+      }
+
+      return (
+        feature.source === 'Override' && pending.reason.trim() !== storedReason(feature).trim()
+      );
+    });
 
     // A reason is required on EVERY value change, not only the ones that turn out to create an
     // exception. `GET /gyms/{id}/features` gives the resolved value and its source, not what the gym
@@ -109,7 +146,10 @@ export function GymFeaturesList({
     }
 
     if (missingReason) {
-      setError('A reason is required for every value change.');
+      // Covers the blanking case as well as the new-exception case: an override whose justification
+      // has been erased is refused by the server, and is exactly what the audit trail exists to
+      // prevent.
+      setError('A reason is required for every change.');
       return;
     }
 
@@ -132,6 +172,7 @@ export function GymFeaturesList({
           canManage={canManage}
           now={now}
           draft={draft[feature.featureId]}
+          busy={busy}
           onToggle={(enabled) => setEnabled(feature.featureId, enabled)}
           onReasonChange={(reason) => setReason(feature.featureId, reason)}
         />
@@ -163,6 +204,7 @@ function FeatureRow({
   canManage,
   now,
   draft,
+  busy,
   onToggle,
   onReasonChange,
 }: {
@@ -170,6 +212,7 @@ function FeatureRow({
   canManage: boolean;
   now: Date;
   draft: Draft | undefined;
+  busy: boolean;
   onToggle: (enabled: boolean) => void;
   onReasonChange: (reason: string) => void;
 }) {
@@ -200,6 +243,10 @@ function FeatureRow({
             aria-label={feature.name}
             className="accent-primary h-4 w-4"
             checked={checked}
+            // Frozen with the rest of the form while a save is in flight. Gating only the Save
+            // button left these live, so anything toggled or typed during the request was silently
+            // wiped when the response re-seeded the draft.
+            disabled={busy}
             onChange={(event) => onToggle(event.target.checked)}
           />
         )}
@@ -214,6 +261,7 @@ function FeatureRow({
             id={reasonId}
             maxLength={500}
             value={draft?.reason ?? ''}
+            disabled={busy}
             onChange={(event) => onReasonChange(event.target.value)}
           />
         </div>

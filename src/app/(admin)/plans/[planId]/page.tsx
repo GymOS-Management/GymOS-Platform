@@ -37,9 +37,23 @@ export default function PlanDetailPage({ params }: { params: Promise<{ planId: s
   const { planId } = use(params);
   const queryClient = useQueryClient();
   const canManage = usePermission('billing.manage');
-  // Deciding what a plan includes is pricing the product, not a features-catalogue concern: the
-  // permission split below is `billing.read`/`billing.manage`, deliberately not `features.*`.
-  const canViewFeatures = usePermission('billing.read');
+  // Deciding what a plan includes is pricing the product, so WRITING plan contents is `billing.*`
+  // and deliberately not `features.*`.
+  //
+  // Reading the card needs BOTH, though, and the earlier comment here claimed otherwise. The card
+  // cannot be drawn from `GET /plans/{id}/features` alone: that response carries only the keys this
+  // plan already has an opinion about, and no `defaultEnabled`. The features with no opinion — the
+  // majority, and the whole third state the card exists to make visible — and the "Default today"
+  // hint both come from `GET /features`, which the backend gates on `features.read`
+  // (FeatureEndpoints.cs). Gating display on `billing.read` alone meant a principal holding it
+  // without `features.read` would take a 403 and see the tab collapse into an error rather than a
+  // card. No seeded role is in that position today, which is precisely why it would have gone
+  // unnoticed until someone built a custom one.
+  // Both hooks called unconditionally, then combined: `usePermission(a) && usePermission(b)` would
+  // short-circuit the second call and break the Rules of Hooks the moment the first went false.
+  const canReadBilling = usePermission('billing.read');
+  const canReadCatalogue = usePermission('features.read');
+  const canViewFeatures = canReadBilling && canReadCatalogue;
 
   const query = useQuery({
     queryKey: ['plans', 'detail', planId],
