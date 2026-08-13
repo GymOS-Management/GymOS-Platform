@@ -1,8 +1,21 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { GymFeaturesList } from '@/features/feature-flags/gym-features-tab';
+import { GymFeaturesList, GymFeaturesTab } from '@/features/feature-flags/gym-features-tab';
+import { gyms } from '@/lib/api/endpoints';
 import type { ResolvedFeatureDetail } from '@/types/api';
+
+vi.mock('@/lib/api/endpoints', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api/endpoints')>();
+  return {
+    ...actual,
+    gyms: { ...actual.gyms, features: vi.fn(), setFeatures: vi.fn() },
+  };
+});
+
+const featuresMock = gyms.features as ReturnType<typeof vi.fn>;
+const setFeaturesMock = gyms.setFeatures as ReturnType<typeof vi.fn>;
 
 const NOW = new Date('2026-08-13T12:00:00Z');
 
@@ -138,5 +151,44 @@ describe('a gym’s resolved features', () => {
 
     expect(screen.queryByRole('switch')).toBeNull();
     expect(screen.queryByRole('button', { name: /save/i })).toBeNull();
+  });
+});
+
+function renderTab() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <GymFeaturesTab gymId="g1" canManage />
+    </QueryClientProvider>,
+  );
+}
+
+/**
+ * D6 (F4-DESIGN §6): the console cannot tell in advance whether turning CRM on will create an
+ * override or collapse into the plan's own answer — that needs the plan's opinion, behind
+ * `billing.read`. The row must show whatever `PUT /gyms/{id}/features` actually reports, never a
+ * guess based on what was requested.
+ */
+describe('GymFeaturesTab — container', () => {
+  it('shows the source the response reports, not the one a naive prediction would assume', async () => {
+    featuresMock.mockResolvedValue([
+      resolved({ featureId: 'f1', key: 'crm', name: 'CRM', enabled: false, source: 'Default' }),
+    ]);
+    // Asking to turn CRM on would naively read as creating an Override — but the response says the
+    // plan already includes it, so resolution collapses to the plan's own answer instead.
+    setFeaturesMock.mockResolvedValue([
+      resolved({ featureId: 'f1', key: 'crm', name: 'CRM', enabled: true, source: 'Plan' }),
+    ]);
+
+    const user = userEvent.setup();
+    renderTab();
+
+    await screen.findByText('CRM');
+    await user.click(screen.getByRole('switch', { name: /crm/i }));
+    await user.type(screen.getByLabelText(/reason for crm/i), 'pilot for Q3');
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    expect(await screen.findByText('Plan')).toBeVisible();
+    expect(screen.queryByText('Override')).not.toBeInTheDocument();
   });
 });

@@ -3,11 +3,13 @@
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { ToggleLeft } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/data/empty-state';
 import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { FeatureGroupList } from '@/features/feature-flags/feature-group-list';
 import { SourceBadge } from '@/features/feature-flags/source-badge';
@@ -46,11 +48,15 @@ export function GymFeaturesList({
   features,
   canManage,
   now,
+  busy = false,
   onSubmit,
 }: {
   features: readonly ResolvedFeatureDetail[];
   canManage: boolean;
   now: Date;
+  /** Disables Save while a submit is in flight, so a double-click cannot fire a second PUT — the
+   * first save having already gone through would make the second arrive with nothing to say. */
+  busy?: boolean;
   onSubmit: (changes: GymFeatureRequest[]) => void;
 }) {
   // Re-seeded whenever the resolved list changes identity — in particular after a save, so the form
@@ -145,7 +151,9 @@ export function GymFeaturesList({
           {error}
         </p>
       )}
-      <Button type="submit">Save</Button>
+      <Button type="submit" loading={busy}>
+        Save
+      </Button>
     </form>
   );
 }
@@ -204,6 +212,7 @@ function FeatureRow({
           <Label htmlFor={reasonId}>Reason for {feature.name}</Label>
           <Input
             id={reasonId}
+            maxLength={500}
             value={draft?.reason ?? ''}
             onChange={(event) => onReasonChange(event.target.value)}
           />
@@ -277,11 +286,27 @@ export function GymFeaturesTab({ gymId, canManage }: { gymId: string; canManage:
   if (query.isPending) return <Skeleton className="h-64 w-full" aria-busy="true" />;
   if (query.isError) return <ApiErrorText error={query.error} />;
 
+  if (query.data.length === 0) {
+    return (
+      <EmptyState
+        icon={ToggleLeft}
+        title="No features yet"
+        description="No module has declared a feature key yet."
+      />
+    );
+  }
+
   return (
+    // `features={query.data}` passes the query result straight through rather than rebuilding an
+    // array here, so it keeps react-query's own referential stability across renders that do not
+    // change the underlying result (e.g. `save.isPending` flipping while a submit is in flight). That
+    // stability is exactly what `plan-features-card.tsx` lost by rebuilding `rows` as a fresh array
+    // literal every render — see the fix there for the failure this avoids.
     <GymFeaturesList
       features={query.data}
       canManage={canManage}
       now={new Date()}
+      busy={save.isPending}
       onSubmit={(changes) => save.mutate(changes)}
     />
   );

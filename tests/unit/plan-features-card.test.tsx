@@ -1,7 +1,26 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { PlanFeaturesList, type PlanFeatureRow } from '@/features/feature-flags/plan-features-card';
+import {
+  PlanFeaturesCard,
+  PlanFeaturesList,
+  type PlanFeatureRow,
+} from '@/features/feature-flags/plan-features-card';
+import { features, plans } from '@/lib/api/endpoints';
+
+vi.mock('@/lib/api/endpoints', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/api/endpoints')>();
+  return {
+    ...actual,
+    features: { ...actual.features, list: vi.fn() },
+    plans: { ...actual.plans, features: vi.fn(), setFeatures: vi.fn() },
+  };
+});
+
+const listMock = features.list as ReturnType<typeof vi.fn>;
+const planFeaturesMock = plans.features as ReturnType<typeof vi.fn>;
+const setFeaturesMock = plans.setFeatures as ReturnType<typeof vi.fn>;
 
 const rows: PlanFeatureRow[] = [
   { key: 'crm', name: 'CRM', category: 'Members', state: 'default', defaultEnabled: false },
@@ -81,5 +100,48 @@ describe('what a plan includes', () => {
 
     expect(screen.queryByRole('button', { name: /save/i })).toBeNull();
     expect(screen.getAllByRole('button', { name: 'Included' })[0]).toBeDisabled();
+  });
+});
+
+function renderCard() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <PlanFeaturesCard planId="p1" rowVersion="row-1" canManage />
+    </QueryClientProvider>,
+  );
+}
+
+/**
+ * The live data-loss bug (whole-branch review, CRITICAL): `PlanFeaturesCard` rebuilt `rows` as a
+ * fresh array literal on every render. `useMutation` has no property tracking, so `save.mutate()`
+ * setting `isPending` re-rendered the container, which made the freshly-built `rows` fail
+ * `PlanFeaturesList`'s `rows !== prevRows` identity check and fire the render-time reset back to the
+ * pre-save server state — discarding the operator's draft while the request was still in flight, and
+ * permanently if the PUT then failed.
+ */
+describe('PlanFeaturesCard — the draft survives a pending save', () => {
+  it('keeps the operator’s chosen state selected while Save is in flight', async () => {
+    listMock.mockResolvedValue([
+      { key: 'crm', name: 'CRM', category: 'Members', defaultEnabled: false },
+    ]);
+    planFeaturesMock.mockResolvedValue({ features: [] });
+    // A promise that never resolves during this test — `save.isPending` stays true, exactly the
+    // window the bug reset the draft in.
+    setFeaturesMock.mockReturnValue(new Promise(() => {}));
+
+    const user = userEvent.setup();
+    renderCard();
+
+    await screen.findByText('CRM');
+    await user.click(screen.getByRole('button', { name: 'Excluded' }));
+    await user.click(screen.getByRole('button', { name: /save/i }));
+
+    // The PUT is still pending (it never resolves in this test). The operator's choice must still
+    // read as selected — not reset back to CRM's pre-save "Default" state.
+    expect(await screen.findByRole('button', { name: 'Excluded' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 });

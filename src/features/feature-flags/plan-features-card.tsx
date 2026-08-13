@@ -2,8 +2,11 @@
 
 import * as React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { ToggleLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/data/empty-state';
 import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { FeatureGroupList } from '@/features/feature-flags/feature-group-list';
 import { features as featuresApi, plans } from '@/lib/api/endpoints';
@@ -46,10 +49,14 @@ const LABELS: { state: PlanFeatureState; label: string }[] = [
 export function PlanFeaturesList({
   rows,
   canManage,
+  busy = false,
   onSubmit,
 }: {
   rows: PlanFeatureRow[];
   canManage: boolean;
+  /** Disables Save while a submit is in flight, so a double-click cannot fire a second PUT carrying
+   * a now-stale `rowVersion` on top of a save that already succeeded. */
+  busy?: boolean;
   onSubmit: (changes: PlanFeatureRequest[]) => void;
 }) {
   const [prevRows, setPrevRows] = React.useState(rows);
@@ -91,7 +98,7 @@ export function PlanFeaturesList({
       </FeatureGroupList>
 
       {canManage && (
-        <Button type="button" onClick={handleSave}>
+        <Button type="button" onClick={handleSave} loading={busy}>
           Save
         </Button>
       )}
@@ -179,17 +186,67 @@ export function PlanFeaturesCard({
     queryFn: ({ signal }) => plans.features(planId, signal),
   });
 
+  // Same key the catalogue page uses for the same GET (`app/(admin)/features/page.tsx`) — one cache
+  // entry and one fetch for the resource instead of two. Prefix invalidation (`['features']`, as the
+  // catalogue page's own save already does) still reaches this entry either way.
   const catalogueQuery = useQuery({
-    queryKey: ['features'],
+    queryKey: ['features', 'list'],
     queryFn: ({ signal }) => featuresApi.list(signal),
   });
+
+  // Built with useMemo, keyed on the two queries' own `data` — which react-query keeps referentially
+  // stable across renders that do not change the underlying result. Without this, `rows` was a fresh
+  // array literal every render, so `save.mutate()` setting `isPending` (which re-renders this
+  // container) produced a new `rows` array that failed `PlanFeaturesList`'s `rows !== prevRows`
+  // identity check and fired its render-time reset back to the pre-save server state — discarding the
+  // operator's draft while the request was in flight, and permanently if it then failed. Keying off
+  // `dataUpdatedAt` would work too; `useMemo` was chosen because it needs no change to what
+  // `PlanFeaturesList` is given, only to how it is built.
+  const rows: PlanFeatureRow[] = React.useMemo(() => {
+    const plan = planQuery.data;
+    const catalogue = catalogueQuery.data;
+
+    if (!plan || !catalogue) {
+      return [];
+    }
+
+    return catalogue.map((feature) => {
+      const opinion = plan.features.find((row) => row.key === feature.key);
+
+      return {
+        key: feature.key,
+        name: feature.name,
+        category: feature.category,
+        state: fromResponseValue(opinion?.isEnabled),
+        defaultEnabled: feature.defaultEnabled,
+      };
+    });
+  }, [planQuery.data, catalogueQuery.data]);
 
   const save = useMutation({
     mutationFn: (changes: PlanFeatureRequest[]) =>
       plans.setFeatures(planId, { features: changes }, rowVersion),
-    onSuccess: () => {
+    onSuccess: (_plan, changes) => {
       queryClient.invalidateQueries({ queryKey: ['plan-features', planId] });
       queryClient.invalidateQueries({ queryKey: ['plans', 'detail', planId] });
+
+      // Read back from the request, not a fresh resolution: unlike the gym tab, this PUT sets the
+      // plan's own opinion directly with nothing to inherit, so what was asked for is exactly what
+      // was saved — never a downstream prediction.
+      const message = changes
+        .map((change) => {
+          const name = catalogueQuery.data?.find((f) => f.key === change.key)?.name ?? change.key;
+          const label =
+            LABELS.find((entry) => entry.state === fromResponseValue(change.isEnabled))?.label ??
+            fromResponseValue(change.isEnabled);
+
+          return `${name} set to ${label}`;
+        })
+        .join(' · ');
+
+      if (message) {
+        toast.success(message);
+      }
     },
     onError: (error) => toastApiError(error),
   });
@@ -206,25 +263,21 @@ export function PlanFeaturesCard({
     return <ApiErrorText error={catalogueQuery.error} />;
   }
 
-  const plan = planQuery.data;
-  const catalogue = catalogueQuery.data;
-
-  const rows: PlanFeatureRow[] = catalogue.map((feature) => {
-    const opinion = plan.features.find((row) => row.key === feature.key);
-
-    return {
-      key: feature.key,
-      name: feature.name,
-      category: feature.category,
-      state: fromResponseValue(opinion?.isEnabled),
-      defaultEnabled: feature.defaultEnabled,
-    };
-  });
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        icon={ToggleLeft}
+        title="No features yet"
+        description="No module has declared a feature key yet."
+      />
+    );
+  }
 
   return (
     <PlanFeaturesList
       rows={rows}
       canManage={canManage}
+      busy={save.isPending}
       onSubmit={(changes) => save.mutate(changes)}
     />
   );
