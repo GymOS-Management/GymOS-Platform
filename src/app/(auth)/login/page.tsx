@@ -49,7 +49,7 @@ export default function LoginPage() {
       // Deliberately one banner, not a field error: the API's `auth.invalid_credentials` covers
       // unknown email, wrong password, and un-activated invitation precisely so sign-in is not an
       // account-existence oracle — and the UI must not un-blur that by pointing at a field.
-      setFailure(apiErrorMessage(error));
+      setFailure(apiErrorMessage(error, 'Something went wrong. Please try again.'));
     }
   });
 

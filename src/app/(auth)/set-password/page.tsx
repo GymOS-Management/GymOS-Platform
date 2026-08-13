@@ -113,10 +113,15 @@ function SetPasswordForm() {
     } catch (error) {
       // A rejected password has still spent the link, so the message has to say so — otherwise the
       // person tries again against a link that can no longer work.
+      //
+      // The fallback keeps "Please try again." (toast-api-error.ts's default is the shorter generic
+      // sentence): retrying is the one useful thing to suggest when setting a password fails.
+      const message = apiErrorMessage(error, 'Something went wrong. Please try again.');
+
       setFailure(
         error instanceof ApiError
-          ? `${apiErrorMessage(error)} This link has now been used — ask an administrator for a new one.`
-          : apiErrorMessage(error),
+          ? `${message} This link has now been used — ask an administrator for a new one.`
+          : message,
       );
     }
   });
