@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __resetClientState, rememberEtag, setAccessToken } from '@/lib/api/client';
-import { features, gyms, invoices, plans } from '@/lib/api/endpoints';
+import { features, gyms, invoices, plans, users } from '@/lib/api/endpoints';
 
 let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
 
@@ -126,5 +126,37 @@ describe('features endpoints', () => {
     await plans.setFeatures('p1', { features: [{ key: 'crm', isEnabled: null }] }, 'v3');
 
     expect(headersOf(0)['If-Match']).toBe('"v3"');
+  });
+});
+
+describe('the activation and reset sends', () => {
+  it('returns what actually happened to the email, from the header', async () => {
+    // Both endpoints answer 204 and report the outcome in X-Invitation-Email. The console used to
+    // discard it and claim "has been sent" on any 204 — so with SMTP down an operator was told the
+    // message went out, while the previous link had genuinely been invalidated. The destructive half
+    // succeeds regardless, which is exactly why the claim has to be true.
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, { status: 204, headers: { 'X-Invitation-Email': 'failed' } }),
+    );
+
+    await expect(users.resendInvitation('user-1')).resolves.toBe('failed');
+  });
+
+  it('reports a disabled sender distinctly from a failed one', async () => {
+    // Different operator action: `failed` means check the mail server, `disabled` means this
+    // environment never attempts a send at all.
+    fetchMock.mockResolvedValueOnce(
+      new Response(null, { status: 204, headers: { 'X-Invitation-Email': 'disabled' } }),
+    );
+
+    await expect(users.sendPasswordReset('user-1')).resolves.toBe('disabled');
+  });
+
+  it('returns null when the header is absent, rather than assuming success', async () => {
+    // An older API, a proxy that strips it, a future rename: none of those are evidence a message
+    // was delivered, so the caller must not be handed something it would read as "sent".
+    fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
+
+    await expect(users.resendInvitation('user-1')).resolves.toBeNull();
   });
 });

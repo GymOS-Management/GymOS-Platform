@@ -163,14 +163,26 @@ export const users = {
    * `users.not_pending_activation`, because that case wants a password reset and the two messages
    * read very differently.
    */
-  resendInvitation: (userId: string) => api.post<void>(`/users/${userId}/resend-invitation`),
+  /**
+   * Returns what happened to the email — `sent`, `failed`, or `disabled` — read from
+   * `X-Invitation-Email`, because a 204 here does not mean a message went out. The link is replaced
+   * either way, so an operator told "sent" when the send failed has also lost the previous link.
+   */
+  resendInvitation: (userId: string) =>
+    api.post<string | null>(`/users/${userId}/resend-invitation`, undefined, {
+      readHeader: 'X-Invitation-Email',
+    }),
 
   /**
    * Emails the account's owner a one-time link. **It does not set a password** — an administrator
    * who could set another administrator's password would hold a credential that is no longer one
    * (ARCHITECTURE.md §3.6).
    */
-  sendPasswordReset: (userId: string) => api.post<void>(`/users/${userId}/reset-password`),
+  /** Same header, same reason as `resendInvitation`. */
+  sendPasswordReset: (userId: string) =>
+    api.post<string | null>(`/users/${userId}/reset-password`, undefined, {
+      readHeader: 'X-Invitation-Email',
+    }),
 };
 
 export const roles = {

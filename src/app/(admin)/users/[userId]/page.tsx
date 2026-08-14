@@ -23,6 +23,34 @@ import { RequirePermission, usePermission, useSession } from '@/lib/auth/session
 import { formatDateTime, formatRelative } from '@/lib/utils/format';
 import type { UserDetail } from '@/types/api';
 
+/**
+ * Reports what actually happened to an activation or reset email.
+ *
+ * The API answers 204 and puts the real outcome in `X-Invitation-Email`: `sent`, `failed`, or
+ * `disabled`. The console used to claim "has been sent" on any 204, so with SMTP down an operator was
+ * told the message went out — while the previous link had genuinely been invalidated. Being told the
+ * truth matters precisely because the destructive half succeeded regardless.
+ *
+ * An absent or unrecognised header is treated as "cannot confirm" rather than as success: this
+ * console should not invent a delivery it has no evidence for.
+ */
+function reportLinkOutcome(outcome: string | null, copy: { sent: string; notSent: string }): void {
+  if (outcome === 'sent') {
+    toast.success(copy.sent);
+    return;
+  }
+
+  if (outcome === 'disabled') {
+    toast.warning(
+      `${copy.notSent} Email is switched off on this environment (Email:Enabled), so no message was attempted.`,
+    );
+    return;
+  }
+
+  // `failed`, or a header this console does not recognise.
+  toast.warning(`${copy.notSent} Check the mail server, then send it again.`);
+}
+
 export default function UserDetailPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId } = use(params);
 
@@ -117,19 +145,28 @@ function UserLifecycleActions({ user }: { user: UserDetail }) {
   /**
    * The two ADR-53 actions. Deliberately worded as "sent", never "delivered": the API reports that
    * the message reached the mail server, and a bounce or a spam filing is invisible from here.
+   *
+   * And "sent" is now claimed only when the API says so. Both endpoints answer 204 with the real
+   * outcome in `X-Invitation-Email`, which this page used to discard — so a failed send read as a
+   * success while the previous link had already been invalidated. See `reportLinkOutcome`.
    */
   const resendInvitation = useMutation({
     mutationFn: () => users.resendInvitation(user.id),
-    onSuccess: () =>
-      toast.success(
-        `A new activation link has been sent to ${user.email}. It replaces the last one.`,
-      ),
+    onSuccess: (outcome) =>
+      reportLinkOutcome(outcome, {
+        sent: `A new activation link has been sent to ${user.email}. It replaces the last one.`,
+        notSent: `A new activation link was created for ${user.email} and the last one no longer works — but the email did not go out.`,
+      }),
     onError: (error) => toastApiError(error),
   });
 
   const sendPasswordReset = useMutation({
     mutationFn: () => users.sendPasswordReset(user.id),
-    onSuccess: () => toast.success(`A password-reset link has been sent to ${user.email}.`),
+    onSuccess: (outcome) =>
+      reportLinkOutcome(outcome, {
+        sent: `A password-reset link has been sent to ${user.email}.`,
+        notSent: `A password-reset link was created for ${user.email}, but the email did not go out.`,
+      }),
     onError: (error) => toastApiError(error),
   });
 

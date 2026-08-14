@@ -76,6 +76,16 @@ interface RequestOptions {
   idempotencyKey?: string;
   /** Skip the refresh-and-retry dance. Used by the auth calls themselves, to avoid recursion. */
   anonymous?: boolean;
+  /**
+   * Return this response header instead of a body, for the endpoints whose answer IS a header.
+   *
+   * `POST /users/{id}/resend-invitation` and `/reset-password` reply 204 and report what actually
+   * happened to the email in `X-Invitation-Email` (`sent` / `failed` / `disabled`). Discarding it let
+   * the console tell an operator the message was sent while the mail server was down — and the
+   * previous link had genuinely been invalidated, so the claim was not merely optimistic but
+   * actively misleading.
+   */
+  readHeader?: string;
   signal?: AbortSignal;
 }
 
@@ -212,7 +222,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   rememberEtag(path, response.headers.get('ETag'));
 
   if (response.status === 204) {
-    return undefined as T;
+    // A 204 carries no body, but it can still carry an answer — see `readHeader`.
+    return (options.readHeader ? response.headers.get(options.readHeader) : undefined) as T;
   }
 
   return (await response.json()) as T;

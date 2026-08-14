@@ -80,8 +80,16 @@ function SetPasswordForm() {
         // An aborted check is a re-render, not a dead link. And a network failure is not evidence
         // the link is dead either — only the API's own refusal is, so anything else lets the form
         // through and leaves the verdict to the submit.
+        //
+        // That was the intent and the code did the opposite: it read EVERY ApiError as a refusal.
+        // The client wraps a network failure as `ApiError(0, …)` — `providers.tsx` already keys its
+        // retry on exactly that — and this endpoint shares sign-in's 10-per-minute per-IP limiter,
+        // so a shared office IP or one dropped request permanently told a valid invitee their
+        // invitation was dead. `GET /auth/set-password` answers 204, 404 or 429, and only the 404
+        // is the API saying anything about the token.
         if (!controller.signal.aborted) {
-          setChecked(error instanceof ApiError ? 'unusable' : 'usable');
+          const refusedByTheApi = error instanceof ApiError && error.status === 404;
+          setChecked(refusedByTheApi ? 'unusable' : 'usable');
         }
       });
 
@@ -118,8 +126,18 @@ function SetPasswordForm() {
       // sentence): retrying is the one useful thing to suggest when setting a password fails.
       const message = apiErrorMessage(error, 'Something went wrong. Please try again.');
 
+      // Only claimed where the API actually processed the request. `POST /auth/set-password` answers
+      // 204, 400, 404 or 429: a 400 is the policy refusing a password the token has already been
+      // spent on (the endpoint's own description says it "is spent even when the password is
+      // rejected"), and a 404 is a link that was already gone. A 429 was never processed, and an
+      // `ApiError(0, …)` never reached the server at all — appending this sentence to those produced
+      // "The server could not be reached… This link has now been used", which is both wrong and
+      // enough to make someone stop trying a link that still works.
+      const linkWasSpent =
+        error instanceof ApiError && (error.status === 400 || error.status === 404);
+
       setFailure(
-        error instanceof ApiError
+        linkWasSpent
           ? `${message} This link has now been used — ask an administrator for a new one.`
           : message,
       );
@@ -173,6 +191,15 @@ function SetPasswordForm() {
             // Mirrors the server's policy so the common mistake is caught before the link is spent.
             // The server remains the authority: it re-checks, and its refusal is shown above.
             minLength: { value: 12, message: 'Use at least 12 characters.' },
+            // The other half of that policy, and the half that matters most here. `PasswordPolicy`
+            // rejects leading or trailing whitespace rather than trimming it ("it survives a
+            // copy-paste and then fails at the next sign-in with no clue why"), and this endpoint
+            // consumes the token BEFORE judging the password. Mirroring only the length rule meant a
+            // password pasted with a trailing space burned the one-shot link on a mistake the form
+            // could have caught for free.
+            validate: (value: string) =>
+              value === value.trim() ||
+              'Remove the space at the start or end — the password is stored exactly as typed.',
           })}
         />
       </FormField>

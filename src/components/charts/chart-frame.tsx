@@ -43,17 +43,58 @@ export interface YScale {
  */
 export function linearScale(values: readonly number[], tickCount = 4): YScale {
   const highest = values.length > 0 ? Math.max(...values) : 0;
-  const max = niceCeiling(Math.max(highest, 0));
+
+  // Integral data gets integral ticks.
+  //
+  // Counting gyms, churn events and new signups produces whole numbers, and small whole numbers are
+  // the normal case on a young platform — where `niceCeiling` divided by four labelled them in
+  // quarters. A day with 3 new gyms gave a ceiling of 5 and an axis reading 0, 1.25, 2.5, 3.75, 5:
+  // quarters of a gym. Money is a different matter, so the rule applies only when every value is
+  // already an integer.
+  const integral = values.every((value) => Number.isInteger(value));
+  const { max, step, count } = integral
+    ? integerAxis(Math.max(highest, 0), tickCount)
+    : fractionalAxis(Math.max(highest, 0), tickCount);
+
   const min = 0;
   const span = max - min || 1;
 
   const y = (value: number) =>
     PLOT.padding.top + INNER_HEIGHT - ((value - min) / span) * INNER_HEIGHT;
 
-  const step = max / tickCount;
-  const ticks = Array.from({ length: tickCount + 1 }, (_, index) => min + step * index);
+  const ticks = Array.from({ length: count + 1 }, (_, index) => min + step * index);
 
   return { min, max, y, ticks };
+}
+
+/** The original behaviour, unchanged: a nice ceiling cut into `tickCount` equal parts. */
+function fractionalAxis(highest: number, tickCount: number) {
+  const max = niceCeiling(highest);
+
+  return { max, step: max / tickCount, count: tickCount };
+}
+
+/**
+ * An axis whose step is a whole number a person would say — 1, 2, 5, 10, 20, 50 … — and whose top
+ * tick is the smallest such step times a tick count that still covers the data.
+ *
+ * Four intervals are tried before five, so the axis stays as tight as it can: 42 becomes 0–50 in tens
+ * rather than 0–80 in twenties.
+ */
+function integerAxis(highest: number, tickCount: number) {
+  for (let magnitude = 1; magnitude <= 1e9; magnitude *= 10) {
+    for (const unit of [1, 2, 5]) {
+      const step = unit * magnitude;
+
+      for (const count of [tickCount, tickCount + 1]) {
+        if (step * count >= highest) {
+          return { max: step * count, step, count };
+        }
+      }
+    }
+  }
+
+  return fractionalAxis(highest, tickCount);
 }
 
 /** Rounds up to 1, 2, 2.5 or 5 x a power of ten, so tick labels read as numbers a person would say. */

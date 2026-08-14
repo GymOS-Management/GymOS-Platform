@@ -107,6 +107,37 @@ export function StackedAreaChart<T>({
           const lower = (point: SeriesPoint<T>) =>
             series.slice(0, entryIndex).reduce((sum, below) => sum + below.valueOf(point.value), 0);
 
+          // A run of one day gets a bar, not a path.
+          //
+          // `toContiguousRuns` deliberately yields single-point runs — `series.ts` says so, and
+          // `line-chart` gives them a fallback marker "otherwise a single recorded day between two
+          // gaps would render as nothing at all". This chart had no such fallback: one point produces
+          // `M x y1 L x y0 Z`, a zero-area path whose only stroke is `var(--card)`, the surface it sits
+          // on. So a range where the nightly job ran on isolated nights — the exact case the gap rule
+          // exists for — drew bare axes while the table listed every row.
+          //
+          // A narrow rect rather than a marker because a band has height: it has to show where this
+          // series sits in the stack, which a dot cannot. `height` floors at 1px so a band whose value
+          // is zero on that day still leaves a hairline — present-and-zero and absent are different
+          // facts, and this chart's whole subject is not conflating them.
+          if (run.length === 1) {
+            const only = run[0]!;
+            const width = 3;
+            const upper = yScale.y(lower(only) + entry.valueOf(only.value));
+            const base = yScale.y(lower(only));
+
+            return (
+              <rect
+                key={`${only.date}-${entry.label}-single`}
+                x={scale.x(only.dayNumber) - width / 2}
+                y={Math.min(upper, base)}
+                width={width}
+                height={Math.max(Math.abs(base - upper), 1)}
+                fill={entry.color}
+              />
+            );
+          }
+
           const top = run
             .map((point, index) => {
               const command = index === 0 ? 'M' : 'L';

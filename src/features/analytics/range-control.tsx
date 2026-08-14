@@ -2,12 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  MAX_RANGE_DAYS,
-  RANGE_PRESETS,
-  explainInvalidRange,
-  type DateRange,
-} from '@/lib/analytics/range';
+import { RANGE_PRESETS, explainInvalidRange, type DateRange } from '@/lib/analytics/range';
 
 /**
  * The date range every analytics screen carries.
@@ -80,7 +75,14 @@ export function RangeControl({
         // Its own id, like the gym form's `#slug-error`: Next renders an always-present, empty
         // `role="alert"` route announcer, so a bare `getByRole('alert')` matches that as well.
         <p id="range-error" role="alert" className="text-destructive text-sm">
-          {problem} A range covers at most {MAX_RANGE_DAYS} days.
+          {/*
+            `explainInvalidRange` already returns a complete sentence for each case, so appending the
+            ceiling to it said the same thing twice on the case that mentions it — "A range covers at
+            most 366 days; this one covers 517. A range covers at most 366 days." — and answered a
+            question nobody asked on the other two, where the problem is a missing date or an inverted
+            one, not the length.
+          */}
+          {problem}
         </p>
       ) : null}
     </div>
