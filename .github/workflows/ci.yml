@@ -54,15 +54,23 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     services:
-      postgres:
-        image: postgres:17-alpine
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
         env:
-          POSTGRES_USER: gymos
-          POSTGRES_PASSWORD: gymos
-          POSTGRES_DB: gymos
-        ports: ['5433:5432']
+          ACCEPT_EULA: 'Y'
+          MSSQL_SA_PASSWORD: Gymos_ci_sa_password1
+          MSSQL_PID: Developer
+          # Must match what the backend's 00-database.sql creates, or every temp-table join hits a
+          # collation conflict against tempdb.
+          MSSQL_COLLATION: Latin1_General_100_CI_AS
+        ports: ['1433:1433']
+        # A real query rather than a port probe: the engine accepts TCP seconds before it will answer
+        # one, and the init step below connects the moment this reports healthy. `--health-start-period`
+        # is what the PostgreSQL service did not need — SQL Server creates its system databases on
+        # first boot and is not answerable for roughly half a minute.
         options: >-
-          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 10
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Gymos_ci_sa_password1 -C -b -Q 'SELECT 1'"
+          --health-interval 10s --health-timeout 5s --health-retries 12 --health-start-period 45s
     steps:
       - name: Check out the console
         uses: actions/checkout@v4
@@ -90,12 +98,57 @@ jobs:
           cache: pnpm
           cache-dependency-path: GymOS-Platform/pnpm-lock.yaml
 
+      # The database, the two principals and the two schemas — the work the `db-init` compose service
+      # does for the containerised stack, done here with the same scripts so the two cannot drift.
+      #
+      # This step has no counterpart in the PostgreSQL version, which needed none: the `postgres`
+      # service created its database and role from environment variables, and the API connected as
+      # that single superuser-ish role. It cannot work that way now, and not for a cosmetic reason —
+      # TenantIsolationValidator refuses to boot a host whose principal holds
+      # ALTER ANY SECURITY POLICY, which `sa` does. An E2E job that connected as `sa` would fail at
+      # startup, so the two-principal split is load-bearing here exactly as it is in production.
+      #
+      # sqlcmd comes from the image rather than being installed on the runner: `docker run` against
+      # the host network reaches the service container's published port with no extra tooling.
+      - name: Initialise the database
+        working-directory: GymOS-Backend
+        run: |
+          set -euo pipefail
+          for script in docker/sqlserver/initdb/*.sql; do
+            echo "db-init: applying ${script}"
+            docker run --rm --network host \
+              -v "$PWD/docker/sqlserver/initdb:/initdb:ro" \
+              mcr.microsoft.com/mssql/server:2022-latest \
+              /opt/mssql-tools18/bin/sqlcmd \
+                -S localhost,1433 -U sa -P 'Gymos_ci_sa_password1' -C -b \
+                -v GYMOS_DB=gymos \
+                -v GYMOS_MIGRATOR_PASSWORD='Gymos_ci_migrator_password1' \
+                -v GYMOS_APP_PASSWORD='Gymos_ci_app_password1' \
+                -i "/initdb/$(basename "$script")"
+          done
+
+      # Migrations as the migrator, then the API as the app principal — the deployment's split, run
+      # as two steps here instead of two containers. Database:MigrateOnly makes the host apply
+      # migrations and exit, which is exactly what the `migrator` compose service does.
+      - name: Apply migrations
+        working-directory: GymOS-Backend
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          Database__MigrateOnly: 'true'
+          ConnectionStrings__Database: Server=localhost,1433;Database=gymos;User Id=gymos_migrator;Password=Gymos_ci_migrator_password1;Encrypt=True;TrustServerCertificate=True;Current Language=us_english
+        run: dotnet run --project src/Host/GymOS.WebApi
+
       - name: Start the API
         working-directory: GymOS-Backend
         env:
           ASPNETCORE_ENVIRONMENT: Development
           ASPNETCORE_URLS: http://localhost:5080
-          ConnectionStrings__Database: Host=localhost;Port=5433;Database=gymos;Username=gymos;Password=gymos
+          # gymos_app, not sa: see the initialise step. TrustServerCertificate because the container
+          # presents a self-signed one; Current Language because UnitOfWork parses constraint names
+          # out of the server's error messages and SQL Server localises them.
+          ConnectionStrings__Database: Server=localhost,1433;Database=gymos;User Id=gymos_app;Password=Gymos_ci_app_password1;Encrypt=True;TrustServerCertificate=True;Current Language=us_english
+          # Applied by the step above, as the principal that is allowed to. gymos_app holds no DDL.
+          Database__MigrateOnStartup: 'false'
           Seed__SuperAdmin__Email: e2e@gymos.test
           Seed__SuperAdmin__Password: e2e-super-admin-password
           # See tests/e2e/README.md: every test signs in fresh, which is more than the

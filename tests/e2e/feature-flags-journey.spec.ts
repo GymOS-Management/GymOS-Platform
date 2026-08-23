@@ -27,7 +27,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * exists, its name/description/category/default/premium are the operator's, and the seeder never
  * touches them again (`FeatureCatalogSeeder`'s own remarks). That means this suite's own edits to the
  * catalogue in an earlier run — flipping a default, editing a description — are still sitting in the
- * database the next time it runs, on the same shared Postgres container. Every assertion here is
+ * database the next time it runs, on the same shared SQL Server container. Every assertion here is
  * therefore phrased as "the opposite of whatever it already was", never "on" or "off" by name, so a
  * second run against an already-mutated catalogue still passes. The plan and the gym this run creates
  * are unique per run and per project (same reasoning as billing-journey.spec.ts), so nothing about

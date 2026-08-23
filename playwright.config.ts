@@ -2,11 +2,11 @@ import { defineConfig, devices } from '@playwright/test';
 
 /**
  * End-to-end against the real stack: this app's dev server proxying a real GymOS-Backend on a real
- * PostgreSQL. Nothing is mocked — the run proves the same-origin proxy, the refresh cookie, and the
+ * SQL Server. Nothing is mocked — the run proves the same-origin proxy, the refresh cookie, and the
  * contract all line up, which is precisely what unit tests cannot.
  *
  * Prerequisites (tests/e2e/README.md): backend on :5080 with a seeded SuperAdmin
- * (e2e@gymos.test / e2e-super-admin-password), PostgreSQL in Docker.
+ * (e2e@gymos.test / e2e-super-admin-password), SQL Server in Docker.
  *
  * Two projects on purpose: the console must *work* at 375px, not merely not crash — the mobile pass
  * runs the same journeys through the drawer nav and card lists.
