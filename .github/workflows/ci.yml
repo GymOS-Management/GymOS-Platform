@@ -2,12 +2,17 @@ name: CI
 
 on:
   push:
-    # All three long-lived branches, not just main. The branch model is
-    # feature/* -> development -> staging -> main, so development is where work actually lands and
-    # main is the last place a break should be discovered. Running only on main meant an increment
-    # could sit on development for days, fully merged, with CI never having seen it — which is
-    # precisely what happened to F4's twenty commits.
-    branches: [main, staging, development]
+    # Two long-lived branches. The model is feature/* -> development -> main: development is where
+    # work actually lands, main is the last place a break should be discovered. Running only on main
+    # meant an increment could sit on development for days, fully merged, with CI never having seen
+    # it — which is precisely what happened to F4's twenty commits.
+    #
+    # `staging` was the third and is retired, matching GymOS-Backend. It was a promotion step nothing
+    # was ever promoted through — it last moved on 12 August — and leaving CI pointed at it means a
+    # permanently red build: this job checks out GymOS-Backend's default branch, which is now on SQL
+    # Server, so a stale Platform branch is tested against a backend it cannot talk to. The ref still
+    # exists; it is simply no longer part of the flow.
+    branches: [main, development]
   pull_request:
 
 jobs:
