@@ -24,13 +24,15 @@ export function MaintenanceGate({ children }: { children: React.ReactNode }) {
    * (including the profile the app root reads to decide whether it's signed in at all) need to be
    * gone before the login form renders, or the freshly-cleared session would still be sitting behind
    * a gate reading its own now-stale state. A new document throws all of that away for free; a
-   * client-side route change would leave us re-deriving which parts of it are safe to keep.
+   * client-side route change would leave us re-deriving which parts of it are safe to keep. The
+   * destination is built absolute, same-origin, purely to satisfy `@next/next/no-location-assign-
+   * relative-destination` — a relative `/login` navigates identically.
    */
   function signOutOfMaintenance(): void {
     auth
       .signOut()
       .finally(() => {
-        window.location.assign('/login');
+        window.location.assign(window.location.origin + '/login');
       })
       .catch(() => {
         // `auth.signOut()` already cleared the token and ETags in its own `finally` — the request

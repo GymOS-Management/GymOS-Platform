@@ -143,7 +143,9 @@ describe('MaintenanceGate (F5 D7)', () => {
         expect.stringContaining('/auth/logout'),
         expect.objectContaining({ method: 'POST' }),
       );
-      expect(window.location.assign).toHaveBeenCalledWith('/login');
+      await vi.waitFor(() => {
+        expect(window.location.assign).toHaveBeenCalledWith(`${window.location.origin}/login`);
+      });
     });
 
     it('still lands on /login when the logout call itself is refused', async () => {
@@ -165,7 +167,7 @@ describe('MaintenanceGate (F5 D7)', () => {
         expect.objectContaining({ method: 'POST' }),
       );
       await vi.waitFor(() => {
-        expect(window.location.assign).toHaveBeenCalledWith('/login');
+        expect(window.location.assign).toHaveBeenCalledWith(`${window.location.origin}/login`);
       });
     });
   });
