@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatCpu, formatDuration, formatMegabytes, formatSeconds } from '@/lib/monitoring/format';
+import {
+  formatCount,
+  formatCpu,
+  formatDuration,
+  formatMegabytes,
+  formatSeconds,
+} from '@/lib/monitoring/format';
 
 describe('formatDuration', () => {
   it('renders a missing duration as a dash, not zero', () => {
@@ -46,5 +52,13 @@ describe('formatCpu and formatMegabytes', () => {
   it('labels memory in the unit the API uses', () => {
     expect(formatMegabytes(312)).toBe('312 MB');
     expect(formatMegabytes('1024')).toBe('1,024 MB');
+  });
+});
+
+describe('formatCount', () => {
+  it('groups a plain count off the wire, accepting either wire shape', () => {
+    expect(formatCount(12)).toBe('12');
+    expect(formatCount('12345')).toBe('12,345');
+    expect(formatCount(null)).toBe('—');
   });
 });

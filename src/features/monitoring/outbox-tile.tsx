@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatSeconds } from '@/lib/monitoring/format';
+import { formatCount, formatSeconds } from '@/lib/monitoring/format';
 import type { OutboxDepth } from '@/types/api';
 
 /**
@@ -18,8 +18,8 @@ export function OutboxTile({ outbox }: { outbox: OutboxDepth }) {
       </CardHeader>
       <CardContent>
         <dl className="grid grid-cols-3 gap-4 text-sm">
-          <Figure label="Messages" value={String(outbox.totalMessages)} />
-          <Figure label="Last 24 h" value={String(outbox.messagesLast24h)} />
+          <Figure label="Messages" value={formatCount(outbox.totalMessages)} />
+          <Figure label="Last 24 h" value={formatCount(outbox.messagesLast24h)} />
           <Figure label="Oldest" value={formatSeconds(outbox.oldestMessageAgeSeconds)} />
         </dl>
       </CardContent>

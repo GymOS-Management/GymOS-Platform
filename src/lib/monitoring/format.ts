@@ -84,3 +84,10 @@ export function formatMegabytes(mb: number | string): string {
 
   return value === null ? '—' : `${new Intl.NumberFormat('en-GB').format(Math.round(value))} MB`;
 }
+
+/** A plain count off the wire, grouped the way `formatMegabytes` groups. */
+export function formatCount(value: number | string | null | undefined): string {
+  const parsed = toNumber(value);
+
+  return parsed === null ? '—' : new Intl.NumberFormat('en-GB').format(Math.round(parsed));
+}
