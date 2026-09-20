@@ -36,32 +36,39 @@ activation-console reviews (separate work). A "who is affected" count on mainten
 ## 3. Decisions
 
 ### D1 — Monitoring is its own screen, not dashboard panels
+
 The dashboard is `analytics.read`; monitoring exists for SupportAgent, who holds `monitoring.read`
 and not `analytics.read` (Monitoring.md §8).
 
 ### D2 — The console never computes staleness
+
 `stale` is rendered from the API's flag (Monitoring.md §3). A job with no run shows "Has not run yet",
 not stale. Error text is shown exactly as sent; the backend already trims it (§2).
 
 ### D3 — Process and outbox tiles say what they are
+
 The process tile is labelled with `instance` and shows "Warming up" while `cpuPercent` is null (§6).
 The outbox tile prints the API's `note` verbatim (§5).
 
 ### D4 — Run history pages by cursor
+
 "Load older" re-queries with `to` = the oldest `startedAtUtc` received, as `hasMore` is defined (§7).
 Status filter: Running / Succeeded / Failed / all.
 
 ### D5 — Settings render from the catalogue, by type
+
 `String` → text, `Int` → number, `Bool` → an On/Off `Select` (no new dependency). Each row shows
 `source` (Default / Configuration / Database), `description`, and a warning when `valid` is false.
 
 ### D6 — Save sends only what changed, per category
+
 `PUT /settings` gets `{ category, values: [{ key, value }] }` for changed keys only; sending untouched
 rows would flip their source to Database. "Reset to default" sends `null`. The mask `••••` is never
 sent; a sensitive row exposes a "Replace value" affordance that swaps the mask for an input. Empty
 string clears (Settings.md §4). A 409 says another administrator saved first and reloads.
 
 ### D7 — Maintenance is confirmed, and the banner has two feeds
+
 Enable via `DestructiveConfirmDialog` typing `maintenance` → `POST /settings/maintenance-mode` with
 `X-Confirm-Action: maintenance`; disable via `ConfirmDialog`. `PUT /settings` never carries the
 Maintenance category (the API refuses it). Banner: holders of `settings.read` poll
@@ -70,17 +77,20 @@ everyone else meets `503 settings.maintenance` on the next request, which the cl
 does a lost session) into a full-page "Maintenance in progress" notice with the message and retry time.
 
 ### D8 — Export is a dialog with a bounded range and a real download
+
 Date range defaults to the last 30 days; client-side rule mirrors the API's (`from ≤ to`, ≤ 366 days,
 message from `audit.export_range`). Carries the current action filter. `api.download(path)` sends the
 bearer token, returns a Blob and the filename from `Content-Disposition`; an anchor click saves it.
 The dialog states the export is itself recorded in the audit log.
 
 ### D9 — Permissions hide, the API authorises
+
 `monitoring.read`: SuperAdmin, PlatformAdmin, SupportAgent, ReadOnly. `settings.read`: SuperAdmin,
 PlatformAdmin, ReadOnly. `settings.manage`: SuperAdmin only — every write affordance hides without it
 and the screen is read-only. `audit.export`: SuperAdmin, PlatformAdmin.
 
 ### D10 — Rules that could rot are pure functions
+
 `src/lib/monitoring/`: run cursor, duration/uptime formatting, job-state presentation.
 `src/lib/settings/`: `settingsDiff(original, draft)`, per-type client validation, export range rule,
 `Content-Disposition` filename parse. Each unit-tested.

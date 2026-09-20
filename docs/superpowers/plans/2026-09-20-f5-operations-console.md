@@ -26,26 +26,26 @@
 
 ## File structure
 
-| Path | Responsibility |
-|---|---|
-| `src/types/api.d.ts`, `src/types/api.ts` | Regenerated contract; new aliases (Task 1) |
-| `src/lib/api/problems.ts` | New codes; `retryAfterSeconds`; `isMaintenance` (Task 2) |
-| `src/lib/api/client.ts` | `api.download`, the 503 interception hook (Task 2) |
-| `src/lib/settings/export.ts` | Export range rule, `Content-Disposition` parse, query conversion (Task 2) |
-| `src/lib/api/endpoints.ts` | `monitoring`, `settings`, `auditLogs.export` (Task 3) |
-| `src/lib/monitoring/format.ts`, `job-state.ts`, `runs.ts` | Duration/uptime formatting, job presentation, run cursor and merge (Task 4) |
-| `src/lib/settings/diff.ts`, `values.ts` | `settingsDiff`, fingerprint, per-type validation, bool parse, key label (Task 5) |
-| `src/lib/nav/items.ts` | Monitoring and Settings entries (Task 6) |
-| `src/features/monitoring/health-rows.tsx` | The health rows, extracted from `HealthPanel` (Task 7) |
-| `src/features/monitoring/process-tile.tsx`, `outbox-tile.tsx`, `jobs-table.tsx` | Overview tiles and jobs table (Task 7) |
-| `src/app/(admin)/monitoring/page.tsx` | Overview container, polled 60 s (Task 7) |
-| `src/features/monitoring/job-runs-list.tsx`, `src/app/(admin)/monitoring/jobs/[name]/page.tsx` | Run history, cursor-paged (Task 8) |
-| `src/features/settings/setting-source-badge.tsx`, `settings-category-form.tsx`, `test-email-card.tsx` | Settings rows by type, save, probe (Task 9) |
-| `src/app/(admin)/settings/page.tsx` | Tabs container (Task 9, extended in Task 10) |
-| `src/features/settings/maintenance-section.tsx`, `maintenance-banner.tsx`, `src/components/feedback/maintenance-notice.tsx`, `src/components/feedback/maintenance-gate.tsx` | Maintenance toggle, banner, 503 notice (Task 10) |
-| `src/features/audit/export-dialog.tsx`, `src/lib/utils/download.ts`, `src/app/(admin)/audit-logs/page.tsx` | Export CSV (Task 11) |
-| `tests/e2e/operations-journey.spec.ts`, `tests/e2e/seed-support-agent.sql`, `tests/e2e/global-setup.ts`, `tests/e2e/README.md` | End to end (Task 12) |
-| `GymOS-Backend/docs/STATUS.md` | Close out (Task 13) |
+| Path                                                                                                                                                                        | Responsibility                                                                   |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `src/types/api.d.ts`, `src/types/api.ts`                                                                                                                                    | Regenerated contract; new aliases (Task 1)                                       |
+| `src/lib/api/problems.ts`                                                                                                                                                   | New codes; `retryAfterSeconds`; `isMaintenance` (Task 2)                         |
+| `src/lib/api/client.ts`                                                                                                                                                     | `api.download`, the 503 interception hook (Task 2)                               |
+| `src/lib/settings/export.ts`                                                                                                                                                | Export range rule, `Content-Disposition` parse, query conversion (Task 2)        |
+| `src/lib/api/endpoints.ts`                                                                                                                                                  | `monitoring`, `settings`, `auditLogs.export` (Task 3)                            |
+| `src/lib/monitoring/format.ts`, `job-state.ts`, `runs.ts`                                                                                                                   | Duration/uptime formatting, job presentation, run cursor and merge (Task 4)      |
+| `src/lib/settings/diff.ts`, `values.ts`                                                                                                                                     | `settingsDiff`, fingerprint, per-type validation, bool parse, key label (Task 5) |
+| `src/lib/nav/items.ts`                                                                                                                                                      | Monitoring and Settings entries (Task 6)                                         |
+| `src/features/monitoring/health-rows.tsx`                                                                                                                                   | The health rows, extracted from `HealthPanel` (Task 7)                           |
+| `src/features/monitoring/process-tile.tsx`, `outbox-tile.tsx`, `jobs-table.tsx`                                                                                             | Overview tiles and jobs table (Task 7)                                           |
+| `src/app/(admin)/monitoring/page.tsx`                                                                                                                                       | Overview container, polled 60 s (Task 7)                                         |
+| `src/features/monitoring/job-runs-list.tsx`, `src/app/(admin)/monitoring/jobs/[name]/page.tsx`                                                                              | Run history, cursor-paged (Task 8)                                               |
+| `src/features/settings/setting-source-badge.tsx`, `settings-category-form.tsx`, `test-email-card.tsx`                                                                       | Settings rows by type, save, probe (Task 9)                                      |
+| `src/app/(admin)/settings/page.tsx`                                                                                                                                         | Tabs container (Task 9, extended in Task 10)                                     |
+| `src/features/settings/maintenance-section.tsx`, `maintenance-banner.tsx`, `src/components/feedback/maintenance-notice.tsx`, `src/components/feedback/maintenance-gate.tsx` | Maintenance toggle, banner, 503 notice (Task 10)                                 |
+| `src/features/audit/export-dialog.tsx`, `src/lib/utils/download.ts`, `src/app/(admin)/audit-logs/page.tsx`                                                                  | Export CSV (Task 11)                                                             |
+| `tests/e2e/operations-journey.spec.ts`, `tests/e2e/seed-support-agent.sql`, `tests/e2e/global-setup.ts`, `tests/e2e/README.md`                                              | End to end (Task 12)                                                             |
+| `GymOS-Backend/docs/STATUS.md`                                                                                                                                              | Close out (Task 13)                                                              |
 
 ---
 
@@ -117,7 +117,13 @@ export type SmtpConnectionTestResult = Schemas['SmtpConnectionTestResult'];
  * listed because `GET /settings?category=Maintenance` is how the banner reads it — but it is never
  * a tab and never sent to `PUT /settings`, which refuses it (D7).
  */
-export const SETTING_CATEGORIES = ['General', 'Email', 'Security', 'Maintenance', 'Retention'] as const;
+export const SETTING_CATEGORIES = [
+  'General',
+  'Email',
+  'Security',
+  'Maintenance',
+  'Retention',
+] as const;
 export type SettingCategory = (typeof SETTING_CATEGORIES)[number];
 
 /**
@@ -210,7 +216,10 @@ describe('maintenance and rate-limit metadata (F5 D7)', () => {
     // number would be NaN minutes on screen.
     const response = new Response(JSON.stringify({ code: 'security.rate_limited' }), {
       status: 429,
-      headers: { 'Content-Type': 'application/problem+json', 'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT' },
+      headers: {
+        'Content-Type': 'application/problem+json',
+        'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT',
+      },
     });
 
     expect((await parseProblem(response)).retryAfterSeconds).toBeNull();
@@ -227,13 +236,10 @@ describe('maintenance interception (F5 D7)', () => {
     const blocked = vi.fn();
     onMaintenanceSet(blocked);
     fetchMock.mockResolvedValue(
-      new Response(
-        JSON.stringify({ code: 'settings.maintenance', detail: 'Down for an hour.' }),
-        {
-          status: 503,
-          headers: { 'Content-Type': 'application/problem+json', 'Retry-After': '300' },
-        },
-      ),
+      new Response(JSON.stringify({ code: 'settings.maintenance', detail: 'Down for an hour.' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/problem+json', 'Retry-After': '300' },
+      }),
     );
 
     await expect(api.get('/gyms')).rejects.toBeInstanceOf(ApiError);
@@ -439,13 +445,13 @@ export class ApiError extends Error {
 In `parseProblem`, read the header and pass it:
 
 ```ts
-  const retryAfterHeader = response.headers.get('Retry-After');
-  const retryAfterSeconds =
-    retryAfterHeader !== null && /^\d+$/.test(retryAfterHeader.trim())
-      ? Number(retryAfterHeader.trim())
-      : null;
+const retryAfterHeader = response.headers.get('Retry-After');
+const retryAfterSeconds =
+  retryAfterHeader !== null && /^\d+$/.test(retryAfterHeader.trim())
+    ? Number(retryAfterHeader.trim())
+    : null;
 
-  return new ApiError(response.status, code, detail, retryable, retryAfterSeconds);
+return new ApiError(response.status, code, detail, retryable, retryAfterSeconds);
 ```
 
 Also update the stale comment on `isRateLimited` to say `see retryAfterSeconds`.
@@ -571,7 +577,11 @@ Replace the failure branch of `request()` with a shared helper, and add `downloa
  * Turns a non-2xx response into the ApiError every caller sees, and fires the two interceptions that
  * are the app's business rather than any one screen's.
  */
-async function rejectWith(path: string, options: RequestOptions, response: Response): Promise<never> {
+async function rejectWith(
+  path: string,
+  options: RequestOptions,
+  response: Response,
+): Promise<never> {
   const problem = await parseProblem(response);
 
   if (problem.isPreconditionDefect) {
@@ -727,7 +737,10 @@ describe('settings endpoints', () => {
   it('PUTs a category batch with NO If-Match — the endpoint takes none (Settings.md §5)', async () => {
     fetchMock.mockResolvedValueOnce(ok([]));
 
-    await settings.update({ category: 'General', values: [{ key: 'general.platform_name', value: 'X' }] });
+    await settings.update({
+      category: 'General',
+      values: [{ key: 'general.platform_name', value: 'X' }],
+    });
 
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('PUT');
     expect(headersOf(0)['If-Match']).toBeUndefined();
@@ -747,7 +760,9 @@ describe('settings endpoints', () => {
   });
 
   it('posts the email probe with no body', async () => {
-    fetchMock.mockResolvedValueOnce(ok({ ok: false, stage: 'Connect', server: null, error: 'refused' }));
+    fetchMock.mockResolvedValueOnce(
+      ok({ ok: false, stage: 'Connect', server: null, error: 'refused' }),
+    );
 
     await settings.testEmail();
 
@@ -760,7 +775,11 @@ describe('auditLogs.export', () => {
   it('builds the export path with the range and the current filter', async () => {
     fetchMock.mockResolvedValueOnce(new Response('id\r\n', { status: 200 }));
 
-    await auditLogs.export({ from: '2026-08-22T00:00:00Z', to: '2026-09-20T23:59:59Z', action: 'gym.' });
+    await auditLogs.export({
+      from: '2026-08-22T00:00:00Z',
+      to: '2026-09-20T23:59:59Z',
+      action: 'gym.',
+    });
 
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       '/api/v1/audit-logs/export?from=2026-08-22T00%3A00%3A00Z&to=2026-09-20T23%3A59%3A59Z&action=gym.',
@@ -1642,26 +1661,26 @@ Implements the spec's nav rule (Monitoring after Administrators, Settings last; 
 Append inside `describe('navigation visibility', …)` in `tests/unit/dashboard-permissions.test.ts`:
 
 ```ts
-  it('shows Monitoring to monitoring.read alone — the SupportAgent shape (F5 D9)', () => {
-    const monitoring = NAV_ITEMS.find((item) => item.href === '/monitoring')!;
+it('shows Monitoring to monitoring.read alone — the SupportAgent shape (F5 D9)', () => {
+  const monitoring = NAV_ITEMS.find((item) => item.href === '/monitoring')!;
 
-    expect(isVisible(monitoring, holding('monitoring.read'))).toBe(true);
-    expect(isVisible(monitoring, holding('analytics.read'))).toBe(false);
-  });
+  expect(isVisible(monitoring, holding('monitoring.read'))).toBe(true);
+  expect(isVisible(monitoring, holding('analytics.read'))).toBe(false);
+});
 
-  it('shows Settings to settings.read, and places it last', () => {
-    const settings = NAV_ITEMS.find((item) => item.href === '/settings')!;
+it('shows Settings to settings.read, and places it last', () => {
+  const settings = NAV_ITEMS.find((item) => item.href === '/settings')!;
 
-    expect(isVisible(settings, holding('settings.read'))).toBe(true);
-    expect(isVisible(settings, holding('monitoring.read'))).toBe(false);
-    expect(NAV_ITEMS[NAV_ITEMS.length - 1]).toBe(settings);
-  });
+  expect(isVisible(settings, holding('settings.read'))).toBe(true);
+  expect(isVisible(settings, holding('monitoring.read'))).toBe(false);
+  expect(NAV_ITEMS[NAV_ITEMS.length - 1]).toBe(settings);
+});
 
-  it('places Monitoring directly after Administrators', () => {
-    const labels = NAV_ITEMS.map((item) => item.label);
+it('places Monitoring directly after Administrators', () => {
+  const labels = NAV_ITEMS.map((item) => item.label);
 
-    expect(labels.indexOf('Monitoring')).toBe(labels.indexOf('Administrators') + 1);
-  });
+  expect(labels.indexOf('Monitoring')).toBe(labels.indexOf('Administrators') + 1);
+});
 ```
 
 - [ ] **Step 2: Run it and watch it fail**
@@ -1777,7 +1796,9 @@ export function ProcessTile({ process }: { process: ProcessMetrics | null }) {
         <CardTitle className="text-sm font-medium">
           Process{process ? ` · ${process.instance}` : ''}
         </CardTitle>
-        <CardDescription>This replica only. Fleet-wide figures live in App Insights.</CardDescription>
+        <CardDescription>
+          This replica only. Fleet-wide figures live in App Insights.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {process === null ? (
@@ -2069,7 +2090,11 @@ function tableRow(text: string): HTMLElement {
 
 describe('JobsTable', () => {
   it('reads a job with no history as not yet run, and never as stale (D2)', () => {
-    render(<JobsTable jobs={[jobState({ name: 'platform-stats', lastRun: null, lastSucceededAtUtc: null })]} />);
+    render(
+      <JobsTable
+        jobs={[jobState({ name: 'platform-stats', lastRun: null, lastSucceededAtUtc: null })]}
+      />,
+    );
 
     expect(tableRow('platform-stats')).toHaveTextContent('Has not run yet');
     expect(tableRow('platform-stats')).not.toHaveTextContent('Stale');
@@ -2193,7 +2218,13 @@ import { History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { DataTable, type Column } from '@/components/data/data-table';
 import { EmptyState } from '@/components/data/empty-state';
 import { formatDuration } from '@/lib/monitoring/format';
@@ -2560,7 +2591,13 @@ import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { SettingSourceBadge } from '@/features/settings/setting-source-badge';
 import { settingsDiff, type SettingsDraft } from '@/lib/settings/diff';
@@ -2604,7 +2641,8 @@ export function SettingsCategoryForm({
     })
     .filter((message): message is string => message !== null);
 
-  const set = (key: string, value: string | null) => setDraft((current) => ({ ...current, [key]: value }));
+  const set = (key: string, value: string | null) =>
+    setDraft((current) => ({ ...current, [key]: value }));
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -2620,8 +2658,10 @@ export function SettingsCategoryForm({
         const pending = draft[view.key];
         const isReset = pending === null;
         const shown = typeof pending === 'string' ? pending : (view.value ?? '');
-        const masked = view.isSensitive && view.value === SETTING_MASK && !replacing.has(view.key) && !isReset;
-        const clientProblem = typeof pending === 'string' ? validateSettingValue(view, pending) : null;
+        const masked =
+          view.isSensitive && view.value === SETTING_MASK && !replacing.has(view.key) && !isReset;
+        const clientProblem =
+          typeof pending === 'string' ? validateSettingValue(view, pending) : null;
 
         return (
           <div key={view.key} className="space-y-2 rounded-md border p-3">
@@ -2658,9 +2698,14 @@ export function SettingsCategoryForm({
                     </Button>
                   </>
                 ) : isReset ? (
-                  <span className="text-muted-foreground text-sm">Will return to its default on save.</span>
+                  <span className="text-muted-foreground text-sm">
+                    Will return to its default on save.
+                  </span>
                 ) : view.valueType === 'Bool' ? (
-                  <Select value={settingBool(shown) ? 'true' : 'false'} onValueChange={(value) => set(view.key, value)}>
+                  <Select
+                    value={settingBool(shown) ? 'true' : 'false'}
+                    onValueChange={(value) => set(view.key, value)}
+                  >
                     <SelectTrigger id={view.key} className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -2672,7 +2717,9 @@ export function SettingsCategoryForm({
                 ) : (
                   <Input
                     id={view.key}
-                    type={view.valueType === 'Int' ? 'number' : view.isSensitive ? 'password' : 'text'}
+                    type={
+                      view.valueType === 'Int' ? 'number' : view.isSensitive ? 'password' : 'text'
+                    }
                     inputMode={view.valueType === 'Int' ? 'numeric' : undefined}
                     value={shown}
                     autoComplete="off"
@@ -2684,18 +2731,30 @@ export function SettingsCategoryForm({
                 )}
 
                 {view.source === 'Database' && !isReset && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => set(view.key, null)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => set(view.key, null)}
+                  >
                     Reset to default
                   </Button>
                 )}
                 {isReset && (
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setDraft(({ [view.key]: _, ...rest }) => rest)}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDraft(({ [view.key]: _, ...rest }) => rest)}
+                  >
                     Keep current value
                   </Button>
                 )}
               </div>
             ) : (
-              <p className="font-mono text-sm">{view.value ?? <span className="text-muted-foreground">not set</span>}</p>
+              <p className="font-mono text-sm">
+                {view.value ?? <span className="text-muted-foreground">not set</span>}
+              </p>
             )}
 
             {clientProblem && (
@@ -2710,7 +2769,11 @@ export function SettingsCategoryForm({
       {canManage && (
         <>
           <ApiErrorText error={error} />
-          <Button type="submit" loading={busy} disabled={changes.length === 0 || problems.length > 0}>
+          <Button
+            type="submit"
+            loading={busy}
+            disabled={changes.length === 0 || problems.length > 0}
+          >
             Save
           </Button>
         </>
@@ -2775,7 +2838,11 @@ export function TestEmailCard({
             {result.ok ? (
               <>
                 <p className="font-medium">Connected.</p>
-                {result.server && <p className="text-muted-foreground font-mono text-xs break-all">{result.server}</p>}
+                {result.server && (
+                  <p className="text-muted-foreground font-mono text-xs break-all">
+                    {result.server}
+                  </p>
+                )}
               </>
             ) : (
               <>
@@ -2946,12 +3013,37 @@ function setting(partial: Partial<SettingView>): SettingView {
 }
 
 const platformName = setting({});
-const smtpPort = setting({ key: 'email.smtp_port', category: 'Email', valueType: 'Int', value: '1025', source: 'Configuration' });
-const startTls = setting({ key: 'email.smtp_use_starttls', category: 'Email', valueType: 'Bool', value: 'false' });
-const smtpPassword = setting({ key: 'email.smtp_password', category: 'Email', isSensitive: true, value: SETTING_MASK, source: 'Database' });
+const smtpPort = setting({
+  key: 'email.smtp_port',
+  category: 'Email',
+  valueType: 'Int',
+  value: '1025',
+  source: 'Configuration',
+});
+const startTls = setting({
+  key: 'email.smtp_use_starttls',
+  category: 'Email',
+  valueType: 'Bool',
+  value: 'false',
+});
+const smtpPassword = setting({
+  key: 'email.smtp_password',
+  category: 'Email',
+  isSensitive: true,
+  value: SETTING_MASK,
+  source: 'Database',
+});
 
 function renderForm(settings: SettingView[], canManage = true, onSave = vi.fn()) {
-  render(<SettingsCategoryForm settings={settings} canManage={canManage} busy={false} error={null} onSave={onSave} />);
+  render(
+    <SettingsCategoryForm
+      settings={settings}
+      canManage={canManage}
+      busy={false}
+      error={null}
+      onSave={onSave}
+    />,
+  );
   return onSave;
 }
 
@@ -3092,7 +3184,9 @@ describe('TestEmailCard', () => {
       'Email is disabled; enable it and save before testing the connection.',
       false,
     );
-    render(<TestEmailCard canManage result={null} busy={false} error={disabled} onTest={vi.fn()} />);
+    render(
+      <TestEmailCard canManage result={null} busy={false} error={disabled} onTest={vi.fn()} />,
+    );
 
     expect(screen.getByRole('alert')).toHaveTextContent(/Email is disabled/);
   });
@@ -3166,7 +3260,10 @@ import { settingBool } from '@/lib/settings/values';
 import type { SettingView } from '@/types/api';
 
 /** The two Maintenance keys, read from the category's views (Settings.md §1). */
-export function maintenanceState(settings: readonly SettingView[]): { enabled: boolean; message: string } {
+export function maintenanceState(settings: readonly SettingView[]): {
+  enabled: boolean;
+  message: string;
+} {
   const enabled = settings.find((view) => view.key === 'maintenance.enabled');
   const message = settings.find((view) => view.key === 'maintenance.message');
 
@@ -3212,7 +3309,9 @@ export function MaintenanceSection({
       <CardContent className="space-y-3">
         <p className="text-sm">
           <span className="font-medium">{state.enabled ? 'On' : 'Off'}</span>
-          {state.enabled && <span className="text-muted-foreground"> — refused callers see: “{state.message}”</span>}
+          {state.enabled && (
+            <span className="text-muted-foreground"> — refused callers see: “{state.message}”</span>
+          )}
         </p>
 
         {canManage &&
@@ -3283,8 +3382,15 @@ function MaintenancePanel() {
   });
 
   const toggle = useMutation({
-    mutationFn: ({ enabled, message, typed }: { enabled: boolean; message: string | null; typed: string }) =>
-      settings.setMaintenanceMode({ enabled, message }, typed),
+    mutationFn: ({
+      enabled,
+      message,
+      typed,
+    }: {
+      enabled: boolean;
+      message: string | null;
+      typed: string;
+    }) => settings.setMaintenanceMode({ enabled, message }, typed),
     onSuccess: (fresh, variables) => {
       // The banner reads the same query key, so it updates on the next render, not the next poll.
       queryClient.setQueryData(['settings', 'Maintenance'], fresh);
@@ -3402,7 +3508,8 @@ export function MaintenanceNotice({
   message: string;
   retryAfterSeconds: number | null;
 }) {
-  const minutes = retryAfterSeconds === null ? null : Math.max(1, Math.ceil(retryAfterSeconds / 60));
+  const minutes =
+    retryAfterSeconds === null ? null : Math.max(1, Math.ceil(retryAfterSeconds / 60));
 
   return (
     <div className="flex min-h-dvh items-center justify-center p-6">
@@ -3504,14 +3611,26 @@ describe('MaintenanceSection (D7)', () => {
   it('sends what the operator typed, verbatim, with the message — and does not check it itself', async () => {
     const onEnable = vi.fn();
     render(
-      <MaintenanceSection settings={off} canManage busy={false} errorMessage={null} onEnable={onEnable} onDisable={vi.fn()} />,
+      <MaintenanceSection
+        settings={off}
+        canManage
+        busy={false}
+        errorMessage={null}
+        onEnable={onEnable}
+        onDisable={vi.fn()}
+      />,
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'Enable maintenance mode' }));
     await userEvent.clear(screen.getByLabelText('Message shown to refused callers'));
-    await userEvent.type(screen.getByLabelText('Message shown to refused callers'), 'Upgrading the database.');
+    await userEvent.type(
+      screen.getByLabelText('Message shown to refused callers'),
+      'Upgrading the database.',
+    );
     await userEvent.type(screen.getByLabelText(/type maintenance to confirm/i), 'maintenanec');
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Enable maintenance mode' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Enable maintenance mode' }),
+    );
 
     // The typo goes to the API, which refuses it (`settings.confirmation_mismatch`); a local check
     // would hide that the server is the one judging.
@@ -3520,30 +3639,55 @@ describe('MaintenanceSection (D7)', () => {
 
   it('keeps the API’s refusal inside the dialog, beside the field', async () => {
     render(
-      <MaintenanceSection settings={off} canManage busy={false} errorMessage="That did not match." onEnable={vi.fn()} onDisable={vi.fn()} />,
+      <MaintenanceSection
+        settings={off}
+        canManage
+        busy={false}
+        errorMessage="That did not match."
+        onEnable={vi.fn()}
+        onDisable={vi.fn()}
+      />,
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'Enable maintenance mode' }));
 
-    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent('That did not match.');
+    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent(
+      'That did not match.',
+    );
   });
 
   it('disables through a plain confirmation', async () => {
     const onDisable = vi.fn();
     render(
-      <MaintenanceSection settings={on} canManage busy={false} errorMessage={null} onEnable={vi.fn()} onDisable={onDisable} />,
+      <MaintenanceSection
+        settings={on}
+        canManage
+        busy={false}
+        errorMessage={null}
+        onEnable={vi.fn()}
+        onDisable={onDisable}
+      />,
     );
 
     expect(screen.getByText(/Back at 03:00 UTC/)).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: 'Disable maintenance mode' }));
-    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Disable' }));
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Disable' }),
+    );
 
     expect(onDisable).toHaveBeenCalledTimes(1);
   });
 
   it('offers neither button without settings.manage (D9)', () => {
     render(
-      <MaintenanceSection settings={on} canManage={false} busy={false} errorMessage={null} onEnable={vi.fn()} onDisable={vi.fn()} />,
+      <MaintenanceSection
+        settings={on}
+        canManage={false}
+        busy={false}
+        errorMessage={null}
+        onEnable={vi.fn()}
+        onDisable={vi.fn()}
+      />,
     );
 
     expect(screen.getByText('On')).toBeVisible();
@@ -3695,8 +3839,8 @@ export function ExportDialog({
         <DialogHeader>
           <DialogTitle>Export audit log as CSV</DialogTitle>
           <DialogDescription>
-            Nine columns per entry, oldest first; before/after values are not included. The export is
-            recorded in the audit log with its filter and row count.
+            Nine columns per entry, oldest first; before/after values are not included. The export
+            is recorded in the audit log with its filter and row count.
           </DialogDescription>
         </DialogHeader>
 
@@ -3801,20 +3945,22 @@ actions={
 And render, next to `AuditEntryDialog`:
 
 ```tsx
-{canExport && (
-  <ExportDialog
-    open={exporting}
-    onOpenChange={(open) => {
-      setExporting(open);
-      if (!open) exportCsv.reset();
-    }}
-    action={debouncedAction}
-    today={new Date()}
-    busy={exportCsv.isPending}
-    error={exportCsv.error}
-    onExport={(range) => exportCsv.mutate(range)}
-  />
-)}
+{
+  canExport && (
+    <ExportDialog
+      open={exporting}
+      onOpenChange={(open) => {
+        setExporting(open);
+        if (!open) exportCsv.reset();
+      }}
+      action={debouncedAction}
+      today={new Date()}
+      busy={exportCsv.isPending}
+      error={exportCsv.error}
+      onExport={(range) => exportCsv.mutate(range)}
+    />
+  );
+}
 ```
 
 - [ ] **Step 4: Write the tests that pin the dialog**
@@ -3884,10 +4030,17 @@ describe('ExportDialog (D8)', () => {
 
   it('still shows the API’s refusal, because a URL can be hand-edited', () => {
     renderDialog({
-      error: new ApiError(400, 'audit.export_range', 'An audit export covers at most 366 days.', false),
+      error: new ApiError(
+        400,
+        'audit.export_range',
+        'An audit export covers at most 366 days.',
+        false,
+      ),
     });
 
-    expect(screen.getAllByRole('alert').some((node) => /366/.test(node.textContent ?? ''))).toBe(true);
+    expect(screen.getAllByRole('alert').some((node) => /366/.test(node.textContent ?? ''))).toBe(
+      true,
+    );
   });
 });
 ```
@@ -3986,19 +4139,19 @@ WHERE u.normalized_email = 'E2E-SUPPORT@GYMOS.TEST' AND ur.role_id = @roleId;
 In `tests/e2e/global-setup.ts`, after the analytics verification and before the final `console.log`:
 
 ```ts
-  // The SupportAgent operations-journey.spec.ts signs in as, to prove maintenance mode refuses a
-  // caller without settings.manage. Seeded by SQL because an invitation needs an email the test
-  // backend never sends. Idempotent; see seed-support-agent.sql.
-  const support = sqlcmd(readFileSync(join(HERE, 'seed-support-agent.sql'), 'utf8')).trim();
+// The SupportAgent operations-journey.spec.ts signs in as, to prove maintenance mode refuses a
+// caller without settings.manage. Seeded by SQL because an invitation needs an email the test
+// backend never sends. Idempotent; see seed-support-agent.sql.
+const support = sqlcmd(readFileSync(join(HERE, 'seed-support-agent.sql'), 'utf8')).trim();
 
-  if (Number(support) !== 1) {
-    throw new Error(
-      `Expected exactly one SupportAgent role assignment for e2e-support@gymos.test, got '${support}'. ` +
-        `See tests/e2e/seed-support-agent.sql.`,
-    );
-  }
+if (Number(support) !== 1) {
+  throw new Error(
+    `Expected exactly one SupportAgent role assignment for e2e-support@gymos.test, got '${support}'. ` +
+      `See tests/e2e/seed-support-agent.sql.`,
+  );
+}
 
-  console.log('Seeded e2e-support@gymos.test as SupportAgent.');
+console.log('Seeded e2e-support@gymos.test as SupportAgent.');
 ```
 
 Wrap the `sqlcmd` call in the same try/catch shape as the analytics seed, so a `THROW` from the SQL reads as "start the backend first" rather than a stack.
