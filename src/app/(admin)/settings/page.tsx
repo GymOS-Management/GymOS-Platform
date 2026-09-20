@@ -7,11 +7,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ApiErrorText } from '@/components/feedback/api-error-text';
 import { PageHeader } from '@/components/layout/page-header';
+import { MaintenanceSection } from '@/features/settings/maintenance-section';
 import { SettingsCategoryForm } from '@/features/settings/settings-category-form';
 import { TestEmailCard } from '@/features/settings/test-email-card';
 import { settings } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/problems';
 import { usePermission } from '@/lib/auth/session';
+import { apiErrorMessage, toastApiError } from '@/lib/feedback/toast-api-error';
 import { settingsFingerprint } from '@/lib/settings/diff';
 import type { SettingCategory, SettingValueWrite, SmtpConnectionTestResult } from '@/types/api';
 
@@ -40,6 +42,9 @@ export default function SettingsPage() {
           </TabsContent>
         ))}
       </Tabs>
+      <div className="space-y-6">
+        <MaintenancePanel />
+      </div>
     </>
   );
 }
@@ -91,6 +96,65 @@ export function SettingsCategoryPanel({ category }: { category: SettingCategory 
       busy={save.isPending}
       error={save.error instanceof ApiError && save.error.isConflict ? null : save.error}
       onSave={(changes) => save.mutate(changes)}
+    />
+  );
+}
+
+/**
+ * The type-to-confirm control for D7. A wrong confirmation stays in the dialog, beside the field
+ * (the gym-delete pattern); every other failure is a toast.
+ */
+function MaintenancePanel() {
+  const canManage = usePermission('settings.manage');
+  const queryClient = useQueryClient();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['settings', 'Maintenance'],
+    queryFn: ({ signal }) => settings.list('Maintenance', signal),
+  });
+
+  const toggle = useMutation({
+    mutationFn: ({
+      enabled,
+      message,
+      typed,
+    }: {
+      enabled: boolean;
+      message: string | null;
+      typed: string;
+    }) => settings.setMaintenanceMode({ enabled, message }, typed),
+    onSuccess: (fresh, variables) => {
+      // The banner reads the same query key, so it updates on the next render, not the next poll.
+      queryClient.setQueryData(['settings', 'Maintenance'], fresh);
+      setErrorMessage(null);
+      toast.success(variables.enabled ? 'Maintenance mode is on.' : 'Maintenance mode is off.');
+    },
+    onError: (error, variables) => {
+      if (variables.enabled) {
+        // A wrong confirmation stays in the dialog, beside the field (the gym-delete pattern).
+        setErrorMessage(apiErrorMessage(error));
+        return;
+      }
+      toastApiError(error);
+    },
+  });
+
+  if (query.isPending) return <Skeleton className="h-32 w-full" aria-busy="true" />;
+  if (query.isError) return <ApiErrorText error={query.error} />;
+
+  return (
+    <MaintenanceSection
+      key={settingsFingerprint(query.data)}
+      settings={query.data}
+      canManage={canManage}
+      busy={toggle.isPending}
+      errorMessage={errorMessage}
+      onEnable={(typed, message) =>
+        toggle.mutate({ enabled: true, message: message.trim() === '' ? null : message, typed })
+      }
+      // Disabling is confirmed by a plain dialog, but the endpoint still demands the header — the
+      // literal word is sent because the operator confirmed, not typed, and the API judges it.
+      onDisable={() => toggle.mutate({ enabled: false, message: null, typed: 'maintenance' })}
     />
   );
 }

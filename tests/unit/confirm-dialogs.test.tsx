@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { DestructiveConfirmDialog } from '@/components/feedback/confirm-dialogs';
@@ -60,5 +60,13 @@ describe('DestructiveConfirmDialog', () => {
     renderDialog({ errorMessage: 'That did not match the gym’s address. Nothing was changed.' });
 
     expect(screen.getByRole('alert')).toHaveTextContent(/did not match/i);
+  });
+
+  // Radix makes everything outside an open dialog inert, so a field the operator must fill in (e.g.
+  // maintenance's message textarea) has to render inside it — see MaintenanceSection (D7).
+  it('renders its children inside the dialog', () => {
+    renderDialog({ children: <label htmlFor="extra-field">Extra field</label> });
+
+    expect(within(screen.getByRole('dialog')).getByText('Extra field')).toBeVisible();
   });
 });

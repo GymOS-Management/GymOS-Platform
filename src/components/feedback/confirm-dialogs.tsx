@@ -84,6 +84,7 @@ export function DestructiveConfirmDialog({
   busy = false,
   errorMessage,
   onConfirm,
+  children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -95,6 +96,10 @@ export function DestructiveConfirmDialog({
   busy?: boolean;
   errorMessage?: string | null;
   onConfirm: (typed: string) => void;
+  /** Extra fields rendered above the typed-confirmation field — e.g. maintenance's message textarea.
+   *  This dialog is a Radix modal: anything outside it is inert while open, so a field the operator
+   *  must fill in has to live in here, not beside the dialog in the calling card. */
+  children?: React.ReactNode;
 }) {
   const [typed, setTyped] = useState('');
 
@@ -112,6 +117,7 @@ export function DestructiveConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
+        {children}
         <div className="space-y-2">
           <Label htmlFor="destructive-confirmation">{expectedHint}</Label>
           <Input

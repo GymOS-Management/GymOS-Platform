@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MaintenanceBanner } from '@/features/settings/maintenance-banner';
 import { useSession } from '@/lib/auth/session';
 import { NAV_ITEMS, isVisible } from '@/lib/nav/items';
 import { cn } from '@/lib/utils/cn';
@@ -141,6 +142,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
+        <MaintenanceBanner />
         <main className="flex-1 p-4 sm:p-6">{children}</main>
       </div>
     </div>
