@@ -4,6 +4,7 @@ import {
   api,
   bootstrapSession,
   getAccessToken,
+  onMaintenanceSet,
   onSessionLostSet,
   query,
   rememberEtag,
@@ -325,5 +326,84 @@ describe('newIdempotencyKey', () => {
   it('differs between intents', async () => {
     const { newIdempotencyKey } = await import('@/lib/billing/idempotency');
     expect(newIdempotencyKey()).not.toBe(newIdempotencyKey());
+  });
+});
+
+describe('maintenance interception (F5 D7)', () => {
+  it('hands a 503 settings.maintenance to the registered handler and still rejects', async () => {
+    setAccessToken('token');
+    const blocked = vi.fn();
+    onMaintenanceSet(blocked);
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({ code: 'settings.maintenance', detail: 'Down for an hour.' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/problem+json', 'Retry-After': '300' },
+      }),
+    );
+
+    await expect(api.get('/gyms')).rejects.toBeInstanceOf(ApiError);
+
+    expect(blocked).toHaveBeenCalledTimes(1);
+    const [error] = blocked.mock.calls[0]!;
+    expect((error as ApiError).isMaintenance).toBe(true);
+    expect((error as ApiError).retryAfterSeconds).toBe(300);
+  });
+
+  it('does not treat any other failure as maintenance', async () => {
+    setAccessToken('token');
+    const blocked = vi.fn();
+    onMaintenanceSet(blocked);
+    fetchMock.mockResolvedValue(problemResponse(503, 'server.invariant_violation'));
+
+    await expect(api.get('/gyms')).rejects.toBeInstanceOf(ApiError);
+
+    expect(blocked).not.toHaveBeenCalled();
+  });
+});
+
+describe('api.download (F5 D8)', () => {
+  it('sends the bearer token and returns the body as a Blob with the attachment filename', async () => {
+    setAccessToken('token');
+    fetchMock.mockResolvedValueOnce(
+      new Response('id,created_at_utc\r\n', {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition':
+            "attachment; filename=audit-logs-20260821-20260920.csv; filename*=UTF-8''audit-logs-20260821-20260920.csv",
+        },
+      }),
+    );
+
+    const file = await api.download('/audit-logs/export?from=a&to=b');
+
+    expect(headersOfCall(0)['Authorization']).toBe('Bearer token');
+    expect(file.filename).toBe('audit-logs-20260821-20260920.csv');
+    expect(await file.blob.text()).toBe('id,created_at_utc\r\n');
+  });
+
+  it('parses a refusal into the same ApiError every other call produces', async () => {
+    setAccessToken('token');
+    fetchMock.mockResolvedValueOnce(problemResponse(400, 'audit.export_range'));
+
+    const failure = await api.download('/audit-logs/export').then(
+      () => null,
+      (error: unknown) => error,
+    );
+
+    expect((failure as ApiError).code).toBe('audit.export_range');
+  });
+
+  it('retries once after a refresh, like any other request', async () => {
+    setAccessToken('stale');
+    fetchMock
+      .mockResolvedValueOnce(problemResponse(401, 'auth.session_expired'))
+      .mockResolvedValueOnce(jsonResponse({ accessToken: 'fresh' }))
+      .mockResolvedValueOnce(new Response('x', { status: 200 }));
+
+    const file = await api.download('/audit-logs/export');
+
+    expect(await file.blob.text()).toBe('x');
+    expect(file.filename).toBeNull();
   });
 });

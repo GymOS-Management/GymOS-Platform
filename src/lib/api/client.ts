@@ -1,4 +1,5 @@
 import { ApiError, parseProblem } from './problems';
+import { parseContentDispositionFilename } from '@/lib/settings/export';
 
 /**
  * The one place the console talks to the API (F1-DESIGN.md D2–D6).
@@ -36,6 +37,17 @@ export function getAccessToken(): string | null {
 
 export function onSessionLostSet(handler: (() => void) | null): void {
   onSessionLost = handler;
+}
+
+/**
+ * Called when the API refuses a request with 503 `settings.maintenance` (Settings.md §7). Only a
+ * caller without `settings.manage` ever sees this, so for them the whole console is closed — the
+ * app renders a full-page notice (F5-DESIGN D7) rather than letting each screen toast the same thing.
+ */
+let onMaintenance: ((error: ApiError) => void) | null = null;
+
+export function onMaintenanceSet(handler: ((error: ApiError) => void) | null): void {
+  onMaintenance = handler;
 }
 
 /**
@@ -191,11 +203,35 @@ async function send(path: string, options: RequestOptions, isRetry = false): Pro
   return response;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  let response: Response;
+/**
+ * Turns a non-2xx response into the ApiError every caller sees, and fires the two interceptions that
+ * are the app's business rather than any one screen's.
+ */
+async function rejectWith(
+  path: string,
+  options: RequestOptions,
+  response: Response,
+): Promise<never> {
+  const problem = await parseProblem(response);
 
+  if (problem.isPreconditionDefect) {
+    // The operator cannot fix this and did not cause it. Loud in the console, generic on screen.
+    console.error(
+      `[api] ${options.method ?? 'GET'} ${path} was sent without a usable If-Match (${problem.code}). ` +
+        'A write reached the API without reading first — see lib/api/client.ts.',
+    );
+  }
+
+  if (problem.isMaintenance) {
+    onMaintenance?.(problem);
+  }
+
+  throw problem;
+}
+
+async function dispatch(path: string, options: RequestOptions): Promise<Response> {
   try {
-    response = await send(path, options);
+    return await send(path, options);
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw error;
@@ -204,19 +240,13 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     // Network-level failure: no status, no problem document.
     throw new ApiError(0, undefined, undefined, true);
   }
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const response = await dispatch(path, options);
 
   if (!response.ok) {
-    const problem = await parseProblem(response);
-
-    if (problem.isPreconditionDefect) {
-      // The operator cannot fix this and did not cause it. Loud in the console, generic on screen.
-      console.error(
-        `[api] ${options.method ?? 'GET'} ${path} was sent without a usable If-Match (${problem.code}). ` +
-          'A write reached the API without reading first — see lib/api/client.ts.',
-      );
-    }
-
-    throw problem;
+    return rejectWith(path, options, response);
   }
 
   rememberEtag(path, response.headers.get('ETag'));
@@ -227,6 +257,33 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   }
 
   return (await response.json()) as T;
+}
+
+export interface DownloadedFile {
+  blob: Blob;
+  /** From `Content-Disposition`, or null when the server named nothing. */
+  filename: string | null;
+}
+
+/**
+ * A GET whose answer is a file, not JSON (`GET /audit-logs/export`).
+ *
+ * Goes through `send` so it carries the bearer token, retries once after a refresh and parses a
+ * refusal exactly like every other call — an `<a href>` to the API would do none of those, because
+ * the token lives in memory and never in a cookie (F1 D3).
+ */
+async function download(path: string, signal?: AbortSignal): Promise<DownloadedFile> {
+  const options: RequestOptions = { signal };
+  const response = await dispatch(path, options);
+
+  if (!response.ok) {
+    return rejectWith(path, options, response);
+  }
+
+  return {
+    blob: await response.blob(),
+    filename: parseContentDispositionFilename(response.headers.get('Content-Disposition')),
+  };
 }
 
 export const api = {
@@ -246,6 +303,8 @@ export const api = {
 
   delete: <T>(path: string, extra?: Omit<RequestOptions, 'method'>) =>
     request<T>(path, { ...extra, method: 'DELETE' }),
+
+  download,
 };
 
 /** Builds a query string, dropping empties so a cleared filter leaves no trace in the URL. */
@@ -270,5 +329,6 @@ export function __resetClientState(): void {
   accessToken = null;
   inFlightRefresh = null;
   onSessionLost = null;
+  onMaintenance = null;
   etags.clear();
 }

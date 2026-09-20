@@ -77,6 +77,25 @@ const MESSAGES: Record<string, string> = {
     'The console failed to send a version with this update. Reload the page and try again.',
   'concurrency.malformed_version':
     'The console sent an invalid version with this update. Reload the page and try again.',
+
+  // Settings and maintenance (F5-DESIGN D7; Settings.md §7, §10)
+  'settings.confirmation_required': 'Type maintenance to confirm.',
+  'settings.confirmation_mismatch':
+    'That did not match. Type maintenance to confirm. Nothing was changed.',
+  // Unreachable from this console — the Maintenance category is never sent to PUT /settings — but
+  // mapped so an unexpected arrival reads as a sentence rather than a route.
+  'settings.use_maintenance_endpoint':
+    'Maintenance mode changes only through its own confirmed control, not with the other settings.',
+  // `settings.email_disabled`, `settings.invalid_value` and `settings.invalid_state` are deliberately
+  // NOT mapped: the API's own detail names the key and the rule, and that is what the operator needs.
+  // `settings.maintenance` is not mapped either — its detail is the maintenance message itself.
+
+  // Audit export (F5-DESIGN D8; Settings.md §9). The client-side range rule reuses this sentence.
+  'audit.export_range':
+    'Choose a range whose start is on or before its end and that covers at most 366 days.',
+
+  // Monitoring (Monitoring.md §7)
+  'monitoring.job_not_found': 'That job is not registered and has no run history.',
 };
 
 /** A failed API call, carrying the parts of the problem document worth acting on. */
@@ -86,9 +105,20 @@ export class ApiError extends Error {
     readonly code: string | undefined,
     readonly detail: string | undefined,
     readonly retryable: boolean,
+    /** From `Retry-After`, in whole seconds; null when absent or not a plain number. */
+    readonly retryAfterSeconds: number | null = null,
   ) {
     super(messageFor(code, detail, status));
     this.name = 'ApiError';
+  }
+
+  /**
+   * The maintenance middleware's short-circuit (Settings.md §7): everyone without `settings.manage`
+   * meets this on every non-exempt route while maintenance is on. Recognised by status AND code —
+   * a 503 from a proxy in front of a dead API carries neither the code nor the meaning.
+   */
+  get isMaintenance(): boolean {
+    return this.status === 503 && this.code === 'settings.maintenance';
   }
 
   /** A stale write. The caller must re-read; retrying the same version can only fail again. */
@@ -118,7 +148,7 @@ export class ApiError extends Error {
     return this.status === 404;
   }
 
-  /** Rate limited. The API sends `Retry-After`; see `retryAfterSeconds` on the parsed response. */
+  /** Rate limited. See `retryAfterSeconds`. */
   get isRateLimited(): boolean {
     return this.status === 429;
   }
@@ -166,7 +196,13 @@ export async function parseProblem(response: Response): Promise<ApiError> {
     // Not a problem document. The status still tells us something.
   }
 
-  return new ApiError(response.status, code, detail, retryable);
+  const retryAfterHeader = response.headers.get('Retry-After');
+  const retryAfterSeconds =
+    retryAfterHeader !== null && /^\d+$/.test(retryAfterHeader.trim())
+      ? Number(retryAfterHeader.trim())
+      : null;
+
+  return new ApiError(response.status, code, detail, retryable, retryAfterSeconds);
 }
 
 /**
