@@ -39,6 +39,7 @@ Seed__SuperAdmin__Email=e2e@gymos.test \
 Seed__SuperAdmin__Password=e2e-super-admin-password \
 Security__RateLimiting__SignInAttemptsPerWindow=500 \
 Security__RateLimiting__AnonymousRequestsPerMinute=5000 \
+Security__RateLimiting__ApiRequestsPerMinute=100000 \
 Jobs__Enabled=false \
 Email__Enabled=false \
 dotnet run --project src/Host/GymOS.WebApi
@@ -55,19 +56,31 @@ disabled-sender refusal (`settings.email_disabled`), which only fires while emai
 isolation means — and twenty of those trips the production-appropriate limit of 10 per minute per IP.
 The limit is raised on the _test_ instance only; nothing about production config changes.
 
-**Why the raised anonymous limit (F5 and later).** M7 added a _global_ anonymous limiter —
+**Why the raised rate limits (F5 and later).** M7 added two _global_ limiters, on top of the
+per-endpoint sign-in policy above, and the suite trips both.
+
 `security.anonymous_requests_per_minute` (`Security:RateLimiting:AnonymousRequestsPerMinute`,
-GymOS-Backend's `docs/BusinessRules/Settings.md` §8) — separate from the per-endpoint sign-in policy
-above and defaulting to 60 requests per minute per IP. Both `POST /auth/login` and `POST /auth/refresh`
-are anonymous as far as this limiter is concerned: login because there is no session yet, and refresh
-because the refresh cookie alone doesn't count as an authenticated bearer request. Every test signs in
-fresh, and every `page.goto`/reload the suite does triggers its own `POST /auth/refresh` — across 66+
-tests that adds up to well over 60 anonymous requests in a minute long before the sign-in-attempts
-policy above would ever trip. The symptom is not an error dialog: refresh gets a `429`, the session is
-silently lost, the console bounces back to `/login`, and whatever the test was waiting for (a
-`/dashboard` redirect, a nav link, a save) times out at exactly 30s — scattered across arbitrary specs
-depending on which one happens to be mid-request when the per-minute window fills. Raised on the _test_
-instance only; nothing about production config changes.
+GymOS-Backend's `docs/BusinessRules/Settings.md` §8) defaults to 60 requests per minute per IP. Both
+`POST /auth/login` and `POST /auth/refresh` are anonymous as far as this limiter is concerned: login
+because there is no session yet, and refresh because the refresh cookie alone doesn't count as an
+authenticated bearer request. Every test signs in fresh, and every `page.goto`/reload the suite does
+triggers its own `POST /auth/refresh` — across 66+ tests that adds up to well over 60 anonymous
+requests in a minute long before the sign-in-attempts policy above would ever trip. The symptom is not
+an error dialog: refresh gets a `429`, the session is silently lost, the console bounces back to
+`/login`, and whatever the test was waiting for (a `/dashboard` redirect, a nav link, a save) times out
+at exactly 30s — scattered across arbitrary specs depending on which one happens to be mid-request when
+the per-minute window fills.
+
+`security.api_requests_per_minute` (`Security:RateLimiting:ApiRequestsPerMinute`, same document) is the
+_authenticated_ counterpart, defaulting to 600 requests per minute per user. The whole suite signs in as
+one user throughout a run, and a screen with several queries — the dashboard's panels, the monitoring
+poll, four settings categories, the maintenance banner's own poll — adds up fast across 70+ tests
+running in a couple of minutes; a burst over 600/min in that single user's window is enough to trip it.
+The symptom here is not a lost session but a `429` on whichever `GET` the screen was mid-request on, so
+the screen renders the API's own rate-limit sentence ("The rate limit for this caller has been
+reached…") in place of its normal content — for example the Settings page's General tab.
+
+Both are raised on the _test_ instance only; nothing about production config changes.
 
 **Why jobs are disabled (F2 and later).** `billing-journey.spec.ts` asserts on subscription and invoice
 status. The renewal sweep runs every 15 minutes and the overdue sweep hourly (F2-DESIGN.md §9); either
