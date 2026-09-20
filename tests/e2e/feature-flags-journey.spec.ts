@@ -219,7 +219,19 @@ test.describe.serial('feature flags journey', () => {
     // rather than clicking a button that was already selected.
     await featureRow(page, PLAN_FEATURE.key).getByRole('button', { name: 'Included' }).click();
     await featureRow(page, DEFAULT_FEATURE.key).getByRole('button', { name: 'Included' }).click();
+
+    // aria-pressed flips from local pending state the instant Save is clicked, before the server
+    // answers — so without waiting for the PUT itself, this test can pass while the write is still
+    // in flight. Under load the page closes for the next test first, aborting it, and the gym step
+    // below then resolves `Default` instead of `Plan` because the opinion never actually landed.
+    const saved = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PUT' &&
+        /\/api\/v1\/plans\/[^/]+\/features$/.test(response.url()) &&
+        response.status() === 200,
+    );
     await clickSave(page, isMobile);
+    await saved;
 
     await expect(
       featureRow(page, PLAN_FEATURE.key).getByRole('button', { name: 'Included' }),
@@ -427,7 +439,18 @@ test.describe.serial('feature flags journey', () => {
     // withdrawn back to "no opinion", not only that "no opinion" can be left alone.
     await featureRow(page, EXCLUDED_FEATURE.key).getByRole('button', { name: 'Excluded' }).click();
     await featureRow(page, DEFAULT_FEATURE.key).getByRole('button', { name: 'Default' }).click();
+
+    // Same reasoning as the setup test above: aria-pressed flips optimistically before the server
+    // answers, and the reload just below aborts the PUT if it is still in flight under load — so the
+    // reload's own re-fetch would read back the plan's pre-save opinions instead of what was just set.
+    const saved = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'PUT' &&
+        /\/api\/v1\/plans\/[^/]+\/features$/.test(response.url()) &&
+        response.status() === 200,
+    );
     await clickSave(page, isMobile);
+    await saved;
 
     await expect(
       featureRow(page, EXCLUDED_FEATURE.key).getByRole('button', { name: 'Excluded' }),
