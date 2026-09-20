@@ -148,7 +148,13 @@ describe('MaintenanceSection (D7)', () => {
 
 describe('MaintenanceNotice (D7)', () => {
   it('shows the API’s message and the retry time in minutes', () => {
-    render(<MaintenanceNotice message="Back at 03:00 UTC." retryAfterSeconds={300} />);
+    render(
+      <MaintenanceNotice
+        message="Back at 03:00 UTC."
+        retryAfterSeconds={300}
+        onSignOut={vi.fn()}
+      />,
+    );
 
     expect(screen.getByRole('alert')).toHaveTextContent('Maintenance in progress');
     expect(screen.getByRole('alert')).toHaveTextContent('Back at 03:00 UTC.');
@@ -156,9 +162,24 @@ describe('MaintenanceNotice (D7)', () => {
   });
 
   it('omits the retry line when the API sent no Retry-After', () => {
-    render(<MaintenanceNotice message="Back soon." retryAfterSeconds={null} />);
+    render(<MaintenanceNotice message="Back soon." retryAfterSeconds={null} onSignOut={vi.fn()} />);
 
     expect(screen.queryByText(/Try again in about/)).toBeNull();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeVisible();
+  });
+
+  it('offers a way out for a caller trapped by their own refusal', async () => {
+    const onSignOut = vi.fn();
+    render(
+      <MaintenanceNotice message="Back soon." retryAfterSeconds={null} onSignOut={onSignOut} />,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Signed in as someone who is refused during maintenance? Sign out to sign in as another administrator.',
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+    expect(onSignOut).toHaveBeenCalledTimes(1);
   });
 });

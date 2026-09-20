@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MaintenanceGate } from '@/components/feedback/maintenance-gate';
 import { __resetClientState, api } from '@/lib/api/client';
@@ -103,5 +104,69 @@ describe('MaintenanceGate (F5 D7)', () => {
       </MaintenanceGate>,
     );
     expect(screen.getByText('app again')).toBeVisible();
+  });
+
+  describe('signing out from the notice', () => {
+    let originalLocation: Location;
+
+    beforeEach(() => {
+      originalLocation = window.location;
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, assign: vi.fn() },
+        writable: true,
+      });
+    });
+
+    afterEach(() => {
+      Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
+    });
+
+    it('posts to /auth/logout and lands on /login', async () => {
+      fetchMock.mockImplementation(async (input) => {
+        const url = typeof input === 'string' ? input : (input as Request).url;
+        if (url.includes('/auth/logout')) {
+          return new Response(null, { status: 204 });
+        }
+        return problemResponse('Down for scheduled maintenance.');
+      });
+
+      render(
+        <MaintenanceGate>
+          <p>app</p>
+        </MaintenanceGate>,
+      );
+      await getAndExpectMaintenance('/gyms');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/logout'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(window.location.assign).toHaveBeenCalledWith('/login');
+    });
+
+    it('still lands on /login when the logout call itself is refused', async () => {
+      fetchMock.mockResolvedValue(problemResponse('Down for scheduled maintenance.'));
+
+      render(
+        <MaintenanceGate>
+          <p>app</p>
+        </MaintenanceGate>,
+      );
+      await getAndExpectMaintenance('/gyms');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+
+      // Every call — the original GET and the logout POST — is refused by the same mock, proving the
+      // navigation in the gate's `finally` fires regardless.
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/auth/logout'),
+        expect.objectContaining({ method: 'POST' }),
+      );
+      await vi.waitFor(() => {
+        expect(window.location.assign).toHaveBeenCalledWith('/login');
+      });
+    });
   });
 });

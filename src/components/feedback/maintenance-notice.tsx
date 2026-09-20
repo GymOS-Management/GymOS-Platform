@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 export function MaintenanceNotice({
   message,
   retryAfterSeconds,
+  onSignOut,
 }: {
   message: string;
   retryAfterSeconds: number | null;
+  onSignOut: () => void;
 }) {
   const minutes =
     retryAfterSeconds === null ? null : Math.max(1, Math.ceil(retryAfterSeconds / 60));
@@ -26,9 +28,18 @@ export function MaintenanceNotice({
             Try again in about {minutes} {minutes === 1 ? 'minute' : 'minutes'}.
           </p>
         )}
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Try again
-        </Button>
+        <p className="text-muted-foreground text-sm">
+          Signed in as someone who is refused during maintenance? Sign out to sign in as another
+          administrator.
+        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <Button variant="primary" onClick={onSignOut}>
+            Sign out
+          </Button>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Try again
+          </Button>
+        </div>
       </div>
     </div>
   );

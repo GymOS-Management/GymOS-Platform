@@ -229,3 +229,20 @@ user` as a 500 — 122 occurrences in one session's log during this increment's 
   working in the same area as the seeded accounts above; it should be rotated.
 - **Owed as before, untouched by F5**: the F3 review and `F3-AS-BUILT.md`, the activation-console
   review, and the `GET /navigation` endpoint.
+
+## Post-review fix: signing out during maintenance
+
+Manual testing after the review found a trap: a signed-in caller without `settings.manage` who hit
+the maintenance notice had only "Try again", which reloads — and a reload exchanges the httpOnly
+refresh cookie for a new token, the profile call is refused the same way, and the notice replaces the
+page again, including the login page. There was no way for that caller to sign out and let a
+SuperAdmin sign in instead.
+
+The fix is two-sided. On the console, `MaintenanceNotice` gained a `Sign out` button that calls
+`auth.signOut()` and then navigates with `window.location.assign('/login')` in a `finally`, so the
+caller lands on the login form whether or not the logout call itself succeeds — a full navigation
+because the gate's `blocked` state and every query cache need to be gone, not just the visible screen.
+On the backend, `POST /api/v1/auth/logout` is now always allowed during maintenance, so the request
+this button makes is never itself the thing refusing the caller. `tests/e2e/operations-journey.spec.ts`
+covers the fix: after the notice appears for the second account, it clicks `Sign out` and asserts the
+browser reaches `/login` with the Email field visible.

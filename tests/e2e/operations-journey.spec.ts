@@ -229,6 +229,12 @@ test.describe.serial('operations journey', () => {
         const alert = other.getByRole('alert').filter({ hasText: 'Maintenance in progress' });
         await expect(alert).toContainText('Maintenance in progress', FIRST_LOAD);
         await expect(alert).toContainText(message);
+
+        // The trap this notice used to be: a refused caller had no way off this screen, since every
+        // reload just re-refused them. Signing out proves the way out is real.
+        await other.getByRole('button', { name: 'Sign out' }).click();
+        await expect(other).toHaveURL(/\/login/);
+        await expect(other.getByLabel('Email')).toBeVisible();
       } finally {
         await context.close();
       }
