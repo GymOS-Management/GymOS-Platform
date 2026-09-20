@@ -158,13 +158,16 @@ test.describe.serial('operations journey', () => {
     await input.fill(`${original} ${runId}`);
     await clickSave(page, isMobile);
 
-    await expect(page.getByText('Settings saved.')).toBeVisible();
+    // Scoped to the sonner toast region, the same way the maintenance toasts are: a bare getByText
+    // is one strict-mode violation away the moment any other visible text on the page happens to
+    // read "Settings saved." too, and scoping costs nothing when it doesn't.
+    await expect(page.getByLabel(/Notifications/).getByText('Settings saved.')).toBeVisible();
     await expect(visibleText(page, 'Database').first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Reset to default' }).click();
     await clickSave(page, isMobile);
 
-    await expect(page.getByText('Settings saved.')).toBeVisible();
+    await expect(page.getByLabel(/Notifications/).getByText('Settings saved.')).toBeVisible();
     await expect(page.getByLabel('Platform name')).toHaveValue('GymOS');
 
     const generalPanel = page.getByRole('tabpanel', { name: 'General' });
@@ -210,18 +213,25 @@ test.describe.serial('operations journey', () => {
       await expect(page.getByRole('status')).toContainText('Maintenance mode is on.');
 
       const context = await browser.newContext();
-      const other = await context.newPage();
-      await other.goto('/login');
-      await other.getByLabel('Email').fill(SUPPORT_AGENT.email);
-      await other.getByLabel('Password', { exact: true }).fill(SUPPORT_AGENT.password);
-      await other.getByRole('button', { name: 'Sign in' }).click();
+      // Nested try/finally so this context always closes, even when the alert assertions below
+      // throw — otherwise it leaked on a failed run, orphaning a browser context for the rest of
+      // the worker's lifetime while the outer `finally` only knew to restore maintenance.
+      try {
+        const other = await context.newPage();
+        await other.goto('/login');
+        await other.getByLabel('Email').fill(SUPPORT_AGENT.email);
+        await other.getByLabel('Password', { exact: true }).fill(SUPPORT_AGENT.password);
+        await other.getByRole('button', { name: 'Sign in' }).click();
 
-      // Next renders an empty `role="alert"` route announcer that also matches (tests/e2e/README.md,
-      // "Writing assertions here") — filtered out by requiring the text the announcer never carries.
-      const alert = other.getByRole('alert').filter({ hasText: 'Maintenance in progress' });
-      await expect(alert).toContainText('Maintenance in progress', FIRST_LOAD);
-      await expect(alert).toContainText(message);
-      await context.close();
+        // Next renders an empty `role="alert"` route announcer that also matches
+        // (tests/e2e/README.md, "Writing assertions here") — filtered out by requiring the text the
+        // announcer never carries.
+        const alert = other.getByRole('alert').filter({ hasText: 'Maintenance in progress' });
+        await expect(alert).toContainText('Maintenance in progress', FIRST_LOAD);
+        await expect(alert).toContainText(message);
+      } finally {
+        await context.close();
+      }
     } finally {
       // Runs whether or not the assertions above passed, so a failed run cannot leave the shared
       // backend closed for the mobile project that follows.

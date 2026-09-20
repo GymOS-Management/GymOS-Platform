@@ -38,6 +38,7 @@ Database__MigrateOnStartup=false \
 Seed__SuperAdmin__Email=e2e@gymos.test \
 Seed__SuperAdmin__Password=e2e-super-admin-password \
 Security__RateLimiting__SignInAttemptsPerWindow=500 \
+Security__RateLimiting__AnonymousRequestsPerMinute=5000 \
 Jobs__Enabled=false \
 Email__Enabled=false \
 dotnet run --project src/Host/GymOS.WebApi
@@ -53,6 +54,20 @@ disabled-sender refusal (`settings.email_disabled`), which only fires while emai
 **Why the raised sign-in limit.** Every test signs in fresh, because a fresh session per test is what
 isolation means — and twenty of those trips the production-appropriate limit of 10 per minute per IP.
 The limit is raised on the _test_ instance only; nothing about production config changes.
+
+**Why the raised anonymous limit (F5 and later).** M7 added a _global_ anonymous limiter —
+`security.anonymous_requests_per_minute` (`Security:RateLimiting:AnonymousRequestsPerMinute`,
+GymOS-Backend's `docs/BusinessRules/Settings.md` §8) — separate from the per-endpoint sign-in policy
+above and defaulting to 60 requests per minute per IP. Both `POST /auth/login` and `POST /auth/refresh`
+are anonymous as far as this limiter is concerned: login because there is no session yet, and refresh
+because the refresh cookie alone doesn't count as an authenticated bearer request. Every test signs in
+fresh, and every `page.goto`/reload the suite does triggers its own `POST /auth/refresh` — across 66+
+tests that adds up to well over 60 anonymous requests in a minute long before the sign-in-attempts
+policy above would ever trip. The symptom is not an error dialog: refresh gets a `429`, the session is
+silently lost, the console bounces back to `/login`, and whatever the test was waiting for (a
+`/dashboard` redirect, a nav link, a save) times out at exactly 30s — scattered across arbitrary specs
+depending on which one happens to be mid-request when the per-minute window fills. Raised on the _test_
+instance only; nothing about production config changes.
 
 **Why jobs are disabled (F2 and later).** `billing-journey.spec.ts` asserts on subscription and invoice
 status. The renewal sweep runs every 15 minutes and the overdue sweep hourly (F2-DESIGN.md §9); either
