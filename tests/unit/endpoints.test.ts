@@ -1,6 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __resetClientState, rememberEtag, setAccessToken } from '@/lib/api/client';
-import { features, gyms, invoices, plans, users } from '@/lib/api/endpoints';
+import {
+  auditLogs,
+  features,
+  gyms,
+  invoices,
+  monitoring,
+  plans,
+  settings,
+  users,
+} from '@/lib/api/endpoints';
 
 let fetchMock: ReturnType<typeof vi.fn<typeof fetch>>;
 
@@ -158,5 +167,90 @@ describe('the activation and reset sends', () => {
     fetchMock.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
     await expect(users.resendInvitation('user-1')).resolves.toBeNull();
+  });
+});
+
+describe('monitoring endpoints', () => {
+  it('encodes the job name and drops empty run filters', async () => {
+    fetchMock.mockResolvedValueOnce(ok({ runs: [], hasMore: false }));
+
+    await monitoring.runs('subscription-renewal', { status: 'Failed', to: undefined, limit: 50 });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      '/api/v1/monitoring/jobs/subscription-renewal/runs?status=Failed&limit=50',
+    );
+  });
+
+  it('reads the overview with no query string', async () => {
+    fetchMock.mockResolvedValueOnce(ok({}));
+
+    await monitoring.overview();
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/monitoring/overview');
+  });
+});
+
+describe('settings endpoints', () => {
+  it('narrows a read to one category, and reads everything when none is given', async () => {
+    fetchMock.mockResolvedValueOnce(ok([]));
+    fetchMock.mockResolvedValueOnce(ok([]));
+
+    await settings.list('Maintenance');
+    await settings.list();
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/settings?category=Maintenance');
+    expect(String(fetchMock.mock.calls[1]?.[0])).toBe('/api/v1/settings');
+  });
+
+  it('PUTs a category batch with NO If-Match — the endpoint takes none (Settings.md §5)', async () => {
+    fetchMock.mockResolvedValueOnce(ok([]));
+
+    await settings.update({
+      category: 'General',
+      values: [{ key: 'general.platform_name', value: 'X' }],
+    });
+
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('PUT');
+    expect(headersOf(0)['If-Match']).toBeUndefined();
+  });
+
+  it('sends what the operator typed as X-Confirm-Action on the maintenance toggle', async () => {
+    fetchMock.mockResolvedValueOnce(ok([]));
+
+    await settings.setMaintenanceMode({ enabled: true, message: 'Back soon.' }, 'maintenance');
+
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('POST');
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/settings/maintenance-mode');
+    expect(headersOf(0)['X-Confirm-Action']).toBe('maintenance');
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(
+      JSON.stringify({ enabled: true, message: 'Back soon.' }),
+    );
+  });
+
+  it('posts the email probe with no body', async () => {
+    fetchMock.mockResolvedValueOnce(
+      ok({ ok: false, stage: 'Connect', server: null, error: 'refused' }),
+    );
+
+    await settings.testEmail();
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('/api/v1/settings/test-email');
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBeUndefined();
+  });
+});
+
+describe('auditLogs.export', () => {
+  it('builds the export path with the range and the current filter', async () => {
+    fetchMock.mockResolvedValueOnce(new Response('id\r\n', { status: 200 }));
+
+    await auditLogs.export({
+      from: '2026-08-22T00:00:00Z',
+      to: '2026-09-20T23:59:59Z',
+      action: 'gym.',
+    });
+
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      '/api/v1/audit-logs/export?from=2026-08-22T00%3A00%3A00Z&to=2026-09-20T23%3A59%3A59Z&action=gym.',
+    );
   });
 });

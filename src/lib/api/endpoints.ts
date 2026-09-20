@@ -16,6 +16,10 @@ import type {
   InvoiceDetail,
   InvoiceListItem,
   InviteUserRequest,
+  JobRunsPage,
+  JobRunStatus,
+  JobStateDto,
+  MonitoringOverview,
   PagedAuditLogs,
   PagedGyms,
   PagedInvoices,
@@ -27,13 +31,18 @@ import type {
   RevenuePoint,
   RoleDetail,
   SetGymFeaturesRequest,
+  SetMaintenanceModeRequest,
   SetPlanFeaturesRequest,
   SetPlanPriceRequest,
+  SettingCategory,
+  SettingView,
+  SmtpConnectionTestResult,
   SubscriptionDetail,
   UpdateFeatureRequest,
   UpdateGymBrandingRequest,
   UpdateGymRequest,
   UpdatePlanRequest,
+  UpdateSettingsRequest,
   UpdateUserRequest,
   UserDetail,
 } from '@/types/api';
@@ -204,6 +213,24 @@ export const auditLogs = {
 
   get: (auditLogId: string, signal?: AbortSignal) =>
     api.get<AuditLogDetail>(`/audit-logs/${auditLogId}`, signal),
+
+  /**
+   * The trail as a file. `from` and `to` are required `date-time`s at most 366 days apart
+   * (`audit.export_range`); the other filters are the list's own. Behind `audit.export`, which
+   * SupportAgent deliberately lacks — reading a screen and walking out with the table are different
+   * authorities under GDPR (Settings.md §9). The export is itself recorded as `audit.exported`.
+   */
+  export: (
+    params: {
+      from: string;
+      to: string;
+      action?: string;
+      entityType?: string;
+      entityId?: string;
+      userId?: string;
+    },
+    signal?: AbortSignal,
+  ) => api.download(`/audit-logs/export${query({ ...params })}`, signal),
 };
 
 export const plans = {
@@ -355,4 +382,61 @@ export const analytics = {
 
   churn: (from: string, to: string, signal?: AbortSignal) =>
     api.get<ChurnPoint[]>(`/analytics/churn${query({ from, to })}`, signal),
+};
+
+/**
+ * Is the platform healthy right now, and did last night's job actually run (Monitoring.md).
+ *
+ * Behind `monitoring.read`, which SupportAgent holds and BillingAdmin does not — the opposite shape
+ * from `analytics.read`, and safe because a run's `error` is bounded to type and message (§2).
+ * `stale` arrives computed; the console never derives it (F5-DESIGN D2).
+ */
+export const monitoring = {
+  overview: (signal?: AbortSignal) => api.get<MonitoringOverview>('/monitoring/overview', signal),
+
+  jobs: (signal?: AbortSignal) => api.get<JobStateDto[]>('/monitoring/jobs', signal),
+
+  /**
+   * Newest first, paged by time: `hasMore` means older runs exist, and the next page is fetched by
+   * moving `to` to the oldest `startedAtUtc` received (§7). `limit` defaults to 50 and is clamped
+   * to 200 server-side. The name is encoded because a job name is a path segment we did not choose.
+   */
+  runs: (
+    name: string,
+    params: { from?: string; to?: string; status?: JobRunStatus; limit?: number } = {},
+    signal?: AbortSignal,
+  ) =>
+    api.get<JobRunsPage>(
+      `/monitoring/jobs/${encodeURIComponent(name)}/runs${query({ ...params })}`,
+      signal,
+    ),
+};
+
+/**
+ * The declared settings catalogue and each key's effective value (Settings.md).
+ *
+ * `list` is `settings.read`; everything else is `settings.manage`, SuperAdmin only. A sensitive
+ * key's value comes back as `••••` once a row exists; the console never sends the mask back — an
+ * untouched row is simply absent from the batch (F5-DESIGN D6).
+ */
+export const settings = {
+  list: (category?: SettingCategory, signal?: AbortSignal) =>
+    api.get<SettingView[]>(`/settings${query({ category })}`, signal),
+
+  /**
+   * One category, only the keys that changed, all-or-nothing. **No `If-Match`**: the endpoint takes
+   * none, so two administrators editing in sequence are last-write-wins and only a genuine race
+   * surfaces as 409 (§5). Returns the category's fresh views.
+   */
+  update: (body: UpdateSettingsRequest) => api.put<SettingView[]>('/settings', body),
+
+  /** Connects, authenticates, NOOPs, disconnects — sends nothing (§6, ADR-53). */
+  testEmail: () => api.post<SmtpConnectionTestResult>('/settings/test-email'),
+
+  /**
+   * `confirmation` is the literal word `maintenance`, typed by the operator and sent verbatim as
+   * `X-Confirm-Action` — the API judges it (AD-6). Prefilling it would confirm nothing.
+   */
+  setMaintenanceMode: (body: SetMaintenanceModeRequest, confirmation: string) =>
+    api.post<SettingView[]>('/settings/maintenance-mode', body, { confirmation }),
 };
