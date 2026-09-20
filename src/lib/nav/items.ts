@@ -1,10 +1,12 @@
 import {
+  Activity,
   Building2,
   ChartNoAxesCombined,
   ClipboardList,
   CreditCard,
   LayoutDashboard,
   Receipt,
+  Settings,
   ToggleLeft,
   Users,
   type LucideIcon,
@@ -65,7 +67,12 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Invoices', href: '/invoices', icon: Receipt, permission: 'billing.read' },
   { label: 'Features', href: '/features', icon: ToggleLeft, permission: 'features.read' },
   { label: 'Administrators', href: '/users', icon: Users, permission: 'users.read' },
+  // After Administrators, per ARCHITECTURE §5. Its own screen rather than dashboard panels because
+  // SupportAgent holds `monitoring.read` and not `analytics.read` (F5-DESIGN D1).
+  { label: 'Monitoring', href: '/monitoring', icon: Activity, permission: 'monitoring.read' },
   { label: 'Audit log', href: '/audit-logs', icon: ClipboardList, permission: 'audit.read' },
+  // Last, per ARCHITECTURE §5.
+  { label: 'Settings', href: '/settings', icon: Settings, permission: 'settings.read' },
 ];
 
 /**

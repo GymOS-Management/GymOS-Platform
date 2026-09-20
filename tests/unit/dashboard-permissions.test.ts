@@ -63,4 +63,25 @@ describe('navigation visibility', () => {
     expect(isVisible(gyms, holding('gyms.read'))).toBe(true);
     expect(isVisible(gyms, holding('audit.read'))).toBe(false);
   });
+
+  it('shows Monitoring to monitoring.read alone — the SupportAgent shape (F5 D9)', () => {
+    const monitoring = NAV_ITEMS.find((item) => item.href === '/monitoring')!;
+
+    expect(isVisible(monitoring, holding('monitoring.read'))).toBe(true);
+    expect(isVisible(monitoring, holding('analytics.read'))).toBe(false);
+  });
+
+  it('shows Settings to settings.read, and places it last', () => {
+    const settings = NAV_ITEMS.find((item) => item.href === '/settings')!;
+
+    expect(isVisible(settings, holding('settings.read'))).toBe(true);
+    expect(isVisible(settings, holding('monitoring.read'))).toBe(false);
+    expect(NAV_ITEMS[NAV_ITEMS.length - 1]).toBe(settings);
+  });
+
+  it('places Monitoring directly after Administrators', () => {
+    const labels = NAV_ITEMS.map((item) => item.label);
+
+    expect(labels.indexOf('Monitoring')).toBe(labels.indexOf('Administrators') + 1);
+  });
 });

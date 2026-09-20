@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             'flex-1 space-y-1 p-3',
             // Scrolls only when expanded. Collapsed, the hover labels are absolutely positioned
             // *outside* the rail, and an `overflow-y-auto` ancestor clips on both axes — it would cut
-            // every label off at the rail's edge. Seven destinations fit a rail without scrolling.
+            // every label off at the rail's edge. Ten destinations fit a rail without scrolling.
             sidebarCollapsed ? 'overflow-visible' : 'overflow-y-auto',
           )}
         />
