@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { ClipboardList } from 'lucide-react';
+import { useMutation, useQuery, keepPreviousData } from '@tanstack/react-query';
+import { ClipboardList, Download } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,15 +10,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuditDiffViewer } from '@/components/data/audit-diff-viewer';
 import { DataTable, Pagination, type Column } from '@/components/data/data-table';
 import { EmptyState } from '@/components/data/empty-state';
 import { PageHeader } from '@/components/layout/page-header';
+import { ExportDialog } from '@/features/audit/export-dialog';
 import { useDebounced } from '@/hooks/use-debounced';
+import { usePermission } from '@/lib/auth/session';
 import { auditLogs } from '@/lib/api/endpoints';
+import { exportRangeToQuery, type DateRange } from '@/lib/settings/export';
 import { describeAuditAction, describeEntityType, shortId } from '@/lib/utils/audit';
+import { saveBlob } from '@/lib/utils/download';
 import { formatDateTime } from '@/lib/utils/format';
 import type { AuditLogListItem } from '@/types/api';
 
@@ -37,11 +42,26 @@ export default function AuditLogsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const debouncedAction = useDebounced(action, 300);
 
+  const canExport = usePermission('audit.export');
+  const [exporting, setExporting] = useState(false);
+
   const query = useQuery({
     queryKey: ['audit-logs', 'list', { page, action: debouncedAction }],
     queryFn: ({ signal }) =>
       auditLogs.list({ page, pageSize: PAGE_SIZE, action: debouncedAction || undefined }, signal),
     placeholderData: keepPreviousData,
+  });
+
+  const exportCsv = useMutation({
+    mutationFn: (range: DateRange) =>
+      auditLogs.export({ ...exportRangeToQuery(range), action: debouncedAction || undefined }),
+    onSuccess: (file) => {
+      // The API names the file after the range (`audit-logs-<from>-<to>.csv`); the fallback only
+      // matters if a proxy ever strips Content-Disposition.
+      saveBlob(file.blob, file.filename ?? 'audit-logs.csv');
+      setExporting(false);
+    },
+    // A refusal stays in the dialog under the fields; nothing to toast.
   });
 
   const columns: Column<AuditLogListItem>[] = [
@@ -121,6 +141,14 @@ export default function AuditLogsPage() {
       <PageHeader
         title="Audit log"
         description="Every administrative action, append-only. Click an entry for the before/after values."
+        actions={
+          canExport ? (
+            <Button variant="outline" onClick={() => setExporting(true)}>
+              <Download className="size-4" aria-hidden />
+              Export CSV
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="mb-4">
@@ -162,6 +190,21 @@ export default function AuditLogsPage() {
       )}
 
       <AuditEntryDialog entryId={selectedId} onClose={() => setSelectedId(null)} />
+
+      {canExport && (
+        <ExportDialog
+          open={exporting}
+          onOpenChange={(open) => {
+            setExporting(open);
+            if (!open) exportCsv.reset();
+          }}
+          action={debouncedAction}
+          today={new Date()}
+          busy={exportCsv.isPending}
+          error={exportCsv.error}
+          onExport={(range) => exportCsv.mutate(range)}
+        />
+      )}
     </>
   );
 }
