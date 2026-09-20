@@ -33,14 +33,22 @@ If 1433 is already taken by a native SQL Server or LocalDB, set `MSSQL_PORT=1434
 cd ../GymOS-Backend
 ASPNETCORE_ENVIRONMENT=Development \
 ASPNETCORE_URLS=http://localhost:5080 \
-ConnectionStrings__Database="Server=localhost,1433;Database=gymos;User Id=gymos_app;Password=Gymos_dev_app_password1;Encrypt=True;TrustServerCertificate=True;Current Language=us_english" \
+ConnectionStrings__Database="Server=127.0.0.1,1433;Database=GymOS_Local;User Id=gymos_app;Password=Gymos_dev_app_password1;Encrypt=True;TrustServerCertificate=True;Current Language=us_english" \
 Database__MigrateOnStartup=false \
 Seed__SuperAdmin__Email=e2e@gymos.test \
 Seed__SuperAdmin__Password=e2e-super-admin-password \
 Security__RateLimiting__SignInAttemptsPerWindow=500 \
 Jobs__Enabled=false \
+Email__Enabled=false \
 dotnet run --project src/Host/GymOS.WebApi
 ```
+
+**Why `127.0.0.1`, not `localhost`.** `localhost` resolved to IPv6 on this machine and timed out; the
+container binds `127.0.0.1`, so the connection string and `docker exec`/`sqlcmd` calls all target that
+address explicitly rather than a name that can resolve either way.
+
+**Why `Email__Enabled=false`.** `operations-journey.spec.ts`'s test-email step asserts the API's own
+disabled-sender refusal (`settings.email_disabled`), which only fires while email is off.
 
 **Why the raised sign-in limit.** Every test signs in fresh, because a fresh session per test is what
 isolation means — and twenty of those trips the production-appropriate limit of 10 per minute per IP.
@@ -92,6 +100,22 @@ The rows are deleted and rewritten on every run. That is safe precisely because 
 model that is rebuilt nightly and never backfilled, so a test database's copy is disposable by
 definition.
 
+### A second account, seeded for you
+
+`global-setup.ts` also runs `tests/e2e/seed-support-agent.sql`, which creates (or repairs)
+`e2e-support@gymos.test`: an Active user holding the platform-scoped SupportAgent role.
+`operations-journey.spec.ts` signs in as this account to prove that maintenance mode refuses a caller
+without `settings.manage`, which the seeded SuperAdmin can never demonstrate — SuperAdmins always pass
+(F5-DESIGN D7).
+
+It is seeded **by SQL**, not by the normal invite flow, because inviting an administrator emails them
+an activation link and this backend runs with email off (§2 above) — there is no way for the invitation
+to be activated. Instead the seed copies the SuperAdmin's own `password_hash` onto the new user: Argon2
+verification reads the salt and parameters from the hash string itself, so a copied hash verifies
+correctly for a different account, and the SupportAgent signs in with the same password
+(`e2e-super-admin-password`). The seed is idempotent — safe to run against a user a previous run already
+created — and, like the `sa` credential above, is a local-container-only affordance.
+
 ## 4. The suite
 
 ```bash
@@ -136,3 +160,10 @@ likewise deletes neither. It also edits the platform's shared, seeded-once featu
 a description and a default-on/off flip — which are `docker rm -f`'s to undo as well: the catalogue is
 insert-only (`FeatureCatalogSeeder`), so a restart does not revert an operator's edit, and the suite's
 own assertions are written to expect "the opposite of whatever it already was" for exactly this reason.
+
+`operations-journey.spec.ts` edits `general.platform_name` and resets it back to Database source and
+then Default before finishing, turns maintenance mode on and off (restored in a `finally`, so a failed
+assertion mid-test cannot leave the shared backend closed to the mobile project that runs next), and
+leaves `audit.exported` entries behind from its own CSV export. None of this needs cleanup: the setting
+ends the run at its default, maintenance ends the run off, and audit log entries are exactly the kind of
+row this trail exists to accumulate.

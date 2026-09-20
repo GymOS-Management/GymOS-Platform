@@ -24,7 +24,7 @@ import { join } from 'node:path';
 
 const CONTAINER = process.env.E2E_DB_CONTAINER ?? 'gymos-mssql';
 const DB_USER = process.env.E2E_DB_USER ?? 'sa';
-const DB_NAME = process.env.E2E_DB_NAME ?? 'gymos';
+const DB_NAME = process.env.E2E_DB_NAME ?? 'GymOS_Local';
 
 /**
  * `sa`, not `gymos_app`, and only here.
@@ -134,4 +134,27 @@ export default function globalSetup() {
   }
 
   console.log(`Seeded ${rows} daily_platform_stats rows with a deliberate ${missing}-day gap.`);
+
+  // The SupportAgent operations-journey.spec.ts signs in as, to prove maintenance mode refuses a
+  // caller without settings.manage. Seeded by SQL because an invitation needs an email the test
+  // backend never sends. Idempotent; see seed-support-agent.sql.
+  let support: string;
+  try {
+    support = sqlcmd(readFileSync(join(HERE, 'seed-support-agent.sql'), 'utf8')).trim();
+  } catch (cause) {
+    throw new Error(
+      `Could not seed e2e-support@gymos.test in container '${CONTAINER}'. Is it running, and has ` +
+        `the backend applied its migrations and seeded e2e@gymos.test? See tests/e2e/README.md.`,
+      { cause },
+    );
+  }
+
+  if (Number(support) !== 1) {
+    throw new Error(
+      `Expected exactly one SupportAgent role assignment for e2e-support@gymos.test, got '${support}'. ` +
+        `See tests/e2e/seed-support-agent.sql.`,
+    );
+  }
+
+  console.log('Seeded e2e-support@gymos.test as SupportAgent.');
 }
