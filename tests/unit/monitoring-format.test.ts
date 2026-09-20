@@ -14,6 +14,11 @@ describe('formatDuration', () => {
     expect(formatDuration(192_000)).toBe('3 min 12 s');
     expect(formatDuration(3_780_000)).toBe('1 h 3 min');
   });
+
+  it('floors sub-unit remainders to prevent carry-over into parent units', () => {
+    expect(formatDuration(3_599_999)).toBe('59 min 59 s');
+    expect(formatDuration(7_199_999)).toBe('1 h 59 min');
+  });
 });
 
 describe('formatSeconds', () => {
@@ -23,6 +28,10 @@ describe('formatSeconds', () => {
     expect(formatSeconds(11_520)).toBe('3 h 12 min');
     expect(formatSeconds('183600')).toBe('2 d 3 h');
     expect(formatSeconds(null)).toBe('—');
+  });
+
+  it('floors seconds to prevent rounding into the next minute', () => {
+    expect(formatSeconds(59.6)).toBe('59 s');
   });
 });
 

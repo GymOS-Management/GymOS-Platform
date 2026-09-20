@@ -33,12 +33,12 @@ export function formatDuration(ms: number | string | null | undefined): string {
 
   if (value < 3_600_000) {
     const minutes = Math.floor(value / 60_000);
-    const seconds = Math.round((value % 60_000) / 1000);
+    const seconds = Math.floor((value % 60_000) / 1000);
     return `${minutes} min ${seconds} s`;
   }
 
   const hours = Math.floor(value / 3_600_000);
-  const minutes = Math.round((value % 3_600_000) / 60_000);
+  const minutes = Math.floor((value % 3_600_000) / 60_000);
   return `${hours} h ${minutes} min`;
 }
 
@@ -51,7 +51,7 @@ export function formatSeconds(seconds: number | string | null | undefined): stri
   }
 
   if (value < 60) {
-    return `${Math.round(value)} s`;
+    return `${Math.floor(value)} s`;
   }
 
   if (value < 3600) {
