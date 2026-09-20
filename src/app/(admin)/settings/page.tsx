@@ -11,10 +11,10 @@ import { MaintenanceSection } from '@/features/settings/maintenance-section';
 import { SettingsCategoryForm } from '@/features/settings/settings-category-form';
 import { TestEmailCard } from '@/features/settings/test-email-card';
 import { settings } from '@/lib/api/endpoints';
-import { ApiError } from '@/lib/api/problems';
 import { usePermission } from '@/lib/auth/session';
 import { apiErrorMessage, toastApiError } from '@/lib/feedback/toast-api-error';
 import { settingsFingerprint } from '@/lib/settings/diff';
+import { describeSaveFailure } from '@/lib/settings/save-failure';
 import type { SettingCategory, SettingValueWrite, SmtpConnectionTestResult } from '@/types/api';
 
 /** The tabs. Maintenance is deliberately absent — it has its own section and its own endpoint (D7). */
@@ -71,7 +71,7 @@ export function SettingsCategoryPanel({ category }: { category: SettingCategory 
       toast.success('Settings saved.');
     },
     onError: (error) => {
-      if (error instanceof ApiError && error.isConflict) {
+      if (describeSaveFailure(error) === 'conflict') {
         toast.error('Another administrator saved first. The latest values have been reloaded.');
         void queryClient.invalidateQueries({ queryKey: ['settings', category] });
         return;
@@ -94,7 +94,7 @@ export function SettingsCategoryPanel({ category }: { category: SettingCategory 
       settings={query.data}
       canManage={canManage}
       busy={save.isPending}
-      error={save.error instanceof ApiError && save.error.isConflict ? null : save.error}
+      error={describeSaveFailure(save.error) === 'conflict' ? null : save.error}
       onSave={(changes) => save.mutate(changes)}
     />
   );
@@ -155,6 +155,9 @@ function MaintenancePanel() {
       // Disabling is confirmed by a plain dialog, but the endpoint still demands the header — the
       // literal word is sent because the operator confirmed, not typed, and the API judges it.
       onDisable={() => toggle.mutate({ enabled: false, message: null, typed: 'maintenance' })}
+      // A closed-and-reopened dialog starts clean — a mismatch from a previous attempt is not still
+      // true of this one.
+      onEnableDialogClose={() => setErrorMessage(null)}
     />
   );
 }

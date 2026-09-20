@@ -6,19 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog, DestructiveConfirmDialog } from '@/components/feedback/confirm-dialogs';
-import { settingBool } from '@/lib/settings/values';
+import { maintenanceState } from '@/lib/settings/maintenance';
 import type { SettingView } from '@/types/api';
-
-/** The two Maintenance keys, read from the category's views (Settings.md §1). */
-export function maintenanceState(settings: readonly SettingView[]): {
-  enabled: boolean;
-  message: string;
-} {
-  const enabled = settings.find((view) => view.key === 'maintenance.enabled');
-  const message = settings.find((view) => view.key === 'maintenance.message');
-
-  return { enabled: settingBool(enabled?.value), message: message?.value ?? '' };
-}
 
 /**
  * Turning the platform off for everyone but a SuperAdmin (F5-DESIGN D7).
@@ -39,6 +28,7 @@ export function MaintenanceSection({
   errorMessage,
   onEnable,
   onDisable,
+  onEnableDialogClose,
 }: {
   settings: readonly SettingView[];
   canManage: boolean;
@@ -46,6 +36,11 @@ export function MaintenanceSection({
   errorMessage: string | null;
   onEnable: (typed: string, message: string) => void;
   onDisable: () => void;
+  /**
+   * Called when the enable dialog closes, so a stale refusal ("That did not match.") does not
+   * reappear next time it opens — it belongs to the attempt that failed, not the next one.
+   */
+  onEnableDialogClose?: () => void;
 }) {
   const state = maintenanceState(settings);
   const [dialog, setDialog] = useState<'enable' | 'disable' | null>(null);
@@ -82,7 +77,12 @@ export function MaintenanceSection({
 
       <DestructiveConfirmDialog
         open={dialog === 'enable'}
-        onOpenChange={(open) => !open && setDialog(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDialog(null);
+            onEnableDialogClose?.();
+          }
+        }}
         title="Enable maintenance mode?"
         description="Everyone without settings.manage is refused on their next request until you disable it."
         expectedHint="Type maintenance to confirm"

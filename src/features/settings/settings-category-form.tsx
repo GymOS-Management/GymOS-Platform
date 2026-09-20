@@ -71,16 +71,26 @@ export function SettingsCategoryForm({
         const label = settingLabel(view.key);
         const pending = draft[view.key];
         const isReset = pending === null;
-        const shown = typeof pending === 'string' ? pending : (view.value ?? '');
-        const masked =
-          view.isSensitive && view.value === SETTING_MASK && !replacing.has(view.key) && !isReset;
+        const opensOnMask =
+          view.isSensitive && view.value === SETTING_MASK && typeof pending !== 'string';
+        // "Replace value" swaps the mask for an input, but the mask itself must never appear inside
+        // it: typing into a box already holding `••••` without clearing it first would store
+        // `••••<secret>` as the effective value — silent and, being sensitive, invisible on screen.
+        const shown = opensOnMask ? '' : typeof pending === 'string' ? pending : (view.value ?? '');
+        const masked = opensOnMask && !replacing.has(view.key) && !isReset;
         const clientProblem =
           typeof pending === 'string' ? validateSettingValue(view, pending) : null;
 
         return (
           <div key={view.key} className="space-y-2 rounded-md border p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <Label htmlFor={view.key}>{label}</Label>
+              {masked || isReset ? (
+                // Neither branch below renders a control with this id — a `Label htmlFor` pointing
+                // at nothing is worse than no association at all.
+                <span className="text-sm leading-none font-medium">{label}</span>
+              ) : (
+                <Label htmlFor={view.key}>{label}</Label>
+              )}
               <code className="text-muted-foreground text-xs">{view.key}</code>
               <SettingSourceBadge source={isReset ? 'Default' : view.source} />
             </div>
@@ -99,7 +109,8 @@ export function SettingsCategoryForm({
               <div className="flex flex-wrap items-center gap-2">
                 {masked ? (
                   <>
-                    <span className="font-mono text-sm" aria-label={`${label} is set`}>
+                    <span className="font-mono text-sm">
+                      <span className="sr-only">{label} is set: </span>
                       {SETTING_MASK}
                     </span>
                     <Button

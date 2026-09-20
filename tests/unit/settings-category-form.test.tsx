@@ -123,6 +123,20 @@ describe('SettingsCategoryForm', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 
+  it('opens Replace value empty, so typing without clearing first never appends to the mask', async () => {
+    const onSave = renderForm([smtpPassword]);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Replace value' }));
+    const input = screen.getByLabelText('Smtp password');
+
+    // Deliberately no userEvent.clear(): the field must already be empty, not holding "••••".
+    expect(input).toHaveValue('');
+    await userEvent.type(input, 'new-secret');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onSave).toHaveBeenCalledWith([{ key: 'email.smtp_password', value: 'new-secret' }]);
+  });
+
   it('sends a Bool as the API’s lowercase word', async () => {
     const onSave = renderForm([startTls]);
 

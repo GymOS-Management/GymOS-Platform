@@ -3,9 +3,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Construction } from 'lucide-react';
 import Link from 'next/link';
-import { maintenanceState } from '@/features/settings/maintenance-section';
 import { settings } from '@/lib/api/endpoints';
 import { usePermission } from '@/lib/auth/session';
+import { maintenanceState } from '@/lib/settings/maintenance';
 
 /**
  * The first of the banner's two feeds (F5-DESIGN D7): holders of `settings.read` poll the Maintenance

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Figure } from '@/features/monitoring/figure';
 import { formatCount, formatSeconds } from '@/lib/monitoring/format';
 import type { OutboxDepth } from '@/types/api';
 
@@ -24,14 +25,5 @@ export function OutboxTile({ outbox }: { outbox: OutboxDepth }) {
         </dl>
       </CardContent>
     </Card>
-  );
-}
-
-function Figure({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="text-lg font-semibold">{value}</dd>
-    </div>
   );
 }

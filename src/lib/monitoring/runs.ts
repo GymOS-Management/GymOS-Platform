@@ -12,8 +12,12 @@ export function nextRunsCursor(page: JobRunsPage): string | undefined {
 
   // Reduced rather than `runs.at(-1)`: the contract says newest first, but the cursor must be
   // right even if a page ever arrives unsorted — a wrong cursor skips history silently.
+  // Compared as instants, not lexically: a lexical comparison only agrees with time order for
+  // timestamps that share a format (UTC offset, fractional-second digits), which the contract
+  // does not promise.
   return page.runs.reduce(
-    (oldest, run) => (run.startedAtUtc < oldest ? run.startedAtUtc : oldest),
+    (oldest, run) =>
+      Date.parse(run.startedAtUtc) < Date.parse(oldest) ? run.startedAtUtc : oldest,
     page.runs[0]!.startedAtUtc,
   );
 }

@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Figure } from '@/features/monitoring/figure';
 import { formatCpu, formatMegabytes, formatSeconds } from '@/lib/monitoring/format';
 import { formatDateTime } from '@/lib/utils/format';
 import type { ProcessMetrics } from '@/types/api';
@@ -27,24 +28,17 @@ export function ProcessTile({ process }: { process: ProcessMetrics | null }) {
           <p className="text-muted-foreground text-sm">No sample yet.</p>
         ) : (
           <dl className="grid grid-cols-3 gap-4 text-sm">
-            <Metric label="CPU" value={formatCpu(process.cpuPercent) ?? 'Warming up'} />
-            <Metric label="Memory" value={formatMegabytes(process.workingSetMb)} />
-            <Metric label="Uptime" value={formatSeconds(process.uptimeSeconds)} />
-            <p className="text-muted-foreground col-span-3 text-xs">
-              Sampled {formatDateTime(process.sampledAtUtc)}
-            </p>
+            <Figure label="CPU" value={formatCpu(process.cpuPercent) ?? 'Warming up'} />
+            <Figure label="Memory" value={formatMegabytes(process.workingSetMb)} />
+            <Figure label="Uptime" value={formatSeconds(process.uptimeSeconds)} />
+            <div className="col-span-3">
+              <p className="text-muted-foreground text-xs">
+                Sampled {formatDateTime(process.sampledAtUtc)}
+              </p>
+            </div>
           </dl>
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="text-lg font-semibold">{value}</dd>
-    </div>
   );
 }

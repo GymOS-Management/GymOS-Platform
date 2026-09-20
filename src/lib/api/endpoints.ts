@@ -434,8 +434,11 @@ export const settings = {
   testEmail: () => api.post<SmtpConnectionTestResult>('/settings/test-email'),
 
   /**
-   * `confirmation` is the literal word `maintenance`, typed by the operator and sent verbatim as
-   * `X-Confirm-Action` — the API judges it (AD-6). Prefilling it would confirm nothing.
+   * `confirmation` is the literal word `maintenance`, sent verbatim as `X-Confirm-Action` — the API
+   * judges it (AD-6). Enabling is type-to-confirm: the operator types it themselves, and prefilling
+   * it would confirm nothing. Disabling reopens the platform to everyone and is guarded by a plain
+   * confirmation dialog instead — a smaller mistake to guard against — so the console supplies the
+   * literal the endpoint still demands.
    */
   setMaintenanceMode: (body: SetMaintenanceModeRequest, confirmation: string) =>
     api.post<SettingView[]>('/settings/maintenance-mode', body, { confirmation }),

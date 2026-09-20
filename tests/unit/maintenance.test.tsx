@@ -2,7 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { MaintenanceNotice } from '@/components/feedback/maintenance-notice';
-import { MaintenanceSection, maintenanceState } from '@/features/settings/maintenance-section';
+import { MaintenanceSection } from '@/features/settings/maintenance-section';
+import { maintenanceState } from '@/lib/settings/maintenance';
 import type { SettingView } from '@/types/api';
 
 function view(key: string, value: string): SettingView {
@@ -100,6 +101,32 @@ describe('MaintenanceSection (D7)', () => {
     );
 
     expect(onDisable).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the refusal when the enable dialog is closed, so reopening it starts clean', async () => {
+    const onDialogClose = vi.fn();
+    render(
+      <MaintenanceSection
+        settings={off}
+        canManage
+        busy={false}
+        errorMessage="That did not match."
+        onEnable={vi.fn()}
+        onDisable={vi.fn()}
+        onEnableDialogClose={onDialogClose}
+      />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enable maintenance mode' }));
+    expect(within(screen.getByRole('dialog')).getByRole('alert')).toHaveTextContent(
+      'That did not match.',
+    );
+
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }),
+    );
+
+    expect(onDialogClose).toHaveBeenCalledTimes(1);
   });
 
   it('offers neither button without settings.manage (D9)', () => {

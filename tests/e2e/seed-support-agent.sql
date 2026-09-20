@@ -13,7 +13,7 @@ IF @hash IS NULL
 
 DECLARE @roleId uniqueidentifier = (
     SELECT TOP 1 id FROM platform.roles
-    WHERE normalized_name = 'SUPPORTAGENT' AND scope = 1 AND tenant_id IS NULL);
+    WHERE normalized_name = 'SUPPORTAGENT' AND scope = 1 /* RoleScope.Platform */ AND tenant_id IS NULL);
 IF @roleId IS NULL
     THROW 50000, 'The SupportAgent role is missing; the identity catalog sync has not run.', 1;
 
@@ -28,13 +28,15 @@ BEGIN
          suspension_reason, failed_login_attempts, locked_out_until_utc, last_login_at_utc,
          password_changed_at_utc, security_stamp, created_at_utc, updated_at_utc)
     VALUES
-        (@userId, 'e2e-support@gymos.test', 'E2E-SUPPORT@GYMOS.TEST', @hash, 'E2E', 'Support', 2,
+        (@userId, 'e2e-support@gymos.test', 'E2E-SUPPORT@GYMOS.TEST', @hash, 'E2E', 'Support',
+         2 /* UserStatus.Active */,
          NULL, 0, NULL, NULL, SYSDATETIMEOFFSET(), NEWID(), SYSDATETIMEOFFSET(), SYSDATETIMEOFFSET());
 END
 ELSE
     -- A previous run's lockout or password change must not fail this one.
     UPDATE platform.users
-    SET password_hash = @hash, status = 2, failed_login_attempts = 0, locked_out_until_utc = NULL
+    SET password_hash = @hash, status = 2 /* UserStatus.Active */, failed_login_attempts = 0,
+        locked_out_until_utc = NULL
     WHERE id = @userId;
 
 IF NOT EXISTS (SELECT 1 FROM platform.user_roles
