@@ -94,6 +94,47 @@ export type RevenuePoint = Schemas['RevenuePoint'];
 export type GrowthPoint = Schemas['GrowthPoint'];
 export type ChurnPoint = Schemas['ChurnPoint'];
 
+export type MonitoringOverview = Schemas['MonitoringOverview'];
+export type JobStateDto = Schemas['JobStateDto'];
+export type JobRunDto = Schemas['JobRunDto'];
+export type JobRunsPage = Schemas['JobRunsPage'];
+export type OutboxDepth = Schemas['OutboxDepth'];
+export type ProcessMetrics = Schemas['ProcessMetrics'];
+
+/**
+ * A run's status by name, as the API reports it and as `/monitoring/jobs/{name}/runs?status=`
+ * accepts it (parsed case-insensitively server-side — Monitoring.md §7).
+ */
+export const JOB_RUN_STATUSES = ['Running', 'Succeeded', 'Failed'] as const;
+export type JobRunStatus = (typeof JOB_RUN_STATUSES)[number];
+
+export type SettingView = Schemas['SettingView'];
+export type SettingValueWrite = Schemas['SettingValueWrite'];
+export type UpdateSettingsRequest = Schemas['UpdateSettingsRequest'];
+export type SetMaintenanceModeRequest = Schemas['SetMaintenanceModeRequest'];
+export type SmtpConnectionTestResult = Schemas['SmtpConnectionTestResult'];
+
+/**
+ * The five categories `PlatformSettingDefinitions.All` declares (Settings.md §1). Maintenance is
+ * listed because `GET /settings?category=Maintenance` is how the banner reads it — but it is never
+ * a tab and never sent to `PUT /settings`, which refuses it (D7).
+ */
+export const SETTING_CATEGORIES = [
+  'General',
+  'Email',
+  'Security',
+  'Maintenance',
+  'Retention',
+] as const;
+export type SettingCategory = (typeof SETTING_CATEGORIES)[number];
+
+/**
+ * What a sensitive value reads as once a row exists, and what a PUT would send to mean
+ * "unchanged" — which this console never does: an unchanged row is simply not sent (D6).
+ * `PlatformSettingDefinitions.Mask`, byte for byte.
+ */
+export const SETTING_MASK = '••••';
+
 /**
  * Subscription lifecycle, by name as the API reports it. `Canceled` and `Expired` are deliberately
  * distinct: cancellation is a decision and expiry is a failure to collect, and M5's churn figure

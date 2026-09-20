@@ -84,6 +84,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/audit-logs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream the audit trail as CSV
+         * @description `from` and `to` are required, inclusive, and at most 366 days apart. Same filters as the list, no paging; rows stream oldest first. Nine columns; `oldValues`/`newValues` are not exported — read them per entry. The export itself is recorded in the audit log with the filter and the row count.
+         */
+        get: operations["ExportAuditLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-logs/{auditLogId}": {
         parameters: {
             query?: never;
@@ -714,6 +734,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/monitoring/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Every registered job's schedule, last run, next due time and stale flag
+         * @description The overview's `jobs` block on its own, for a page that polls job state. A job is stale when its newest run is still running past one period plus grace, or when it has not succeeded within two periods plus grace (grace is `Monitoring:StaleGrace`, default 5 minutes). A job that has never run is not stale.
+         */
+        get: operations["GetJobStates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/monitoring/jobs/{name}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * One job's run history, newest first, paged by time
+         * @description `name` is a registered job, or one that still has history under an old name. `from` and `to` are optional and inclusive on the run's start time; `status` is one of Running, Succeeded, Failed; `limit` <= 0 means the default of 50, and values above 200 are clamped to 200. `hasMore` means older runs exist — page by moving `to` to the oldest `startedAtUtc` returned. A run's `error` is the exception's type and message only; the stack is in the structured log.
+         */
+        get: operations["ListJobRuns"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/monitoring/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Health, job state, outbox depth and this replica's process, live
+         * @description Four independently sourced blocks. `health` is the same projection `/dashboard/health` returns. `jobs` lists every registered job, including ones that have never run (`lastRun: null`); `stale` is computed on read from the schedule and the run history. `outbox` is depth only — lag and dead letters arrive with the outbox processor, and `note` says so. `process` is the answering replica's own CPU, memory and uptime, null until its first sample; fleet-wide numbers are App Insights'.
+         */
+        get: operations["GetMonitoringOverview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/plans": {
         parameters: {
             query?: never;
@@ -906,6 +986,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The declared catalog, each key's effective value and where it came from
+         * @description Every declared setting, optionally narrowed to one `category`. `source` says which layer answered: a stored row beats configuration, which beats the definition's own default. A sensitive key's value comes back as "••••" once a row exists for it — the plaintext is never returned by this endpoint. The Maintenance category is readable here but changes only through its own endpoint, not this one's PUT.
+         */
+        get: operations["GetSettings"];
+        /**
+         * Write one category's batch of settings
+         * @description Every key in `values` must belong to `category`. An empty string or a null value deletes the row, returning that key to configuration or its own default; for a sensitive key, sending back "••••" leaves the stored value unchanged. The Maintenance category is refused here (400 `settings.use_maintenance_endpoint`) — it changes only through its own confirmed endpoint. The whole batch is checked before anything is written: a duplicate key, an unknown key, a key from another category, a value that fails its own rule, or a would-be state that fails cross-field validation all fail the entire batch with nothing changed. Returns the category's fresh views on success.
+         */
+        put: operations["UpdateSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/maintenance-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Turn maintenance mode on or off
+         * @description Requires the `X-Confirm-Action` header carrying the literal word `maintenance` (AD-6): while it is on, every caller but a SuperAdmin — holding `settings.manage` — is refused with 503, so a mis-clicked toggle must not be able to close the whole platform. `message` is shown to refused callers; omitting it falls back to the definition's own default. Returns the Maintenance category's fresh views.
+         */
+        post: operations["SetMaintenanceMode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings/test-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test the SMTP connection — sends nothing
+         * @description Connects with the effective Email settings, authenticates if a username is configured, and issues a NOOP: the same round trips a real send would open, none of the send itself (ADR-53 stands). A refused login or an unreachable host is still a 200 — `ok` is false and `stage` says how far the attempt got (`Connect`, `Tls`, or `Authenticate`). 400 `settings.email_disabled` when `Email:Enabled` is false; enable and save it first.
+         */
+        post: operations["TestEmailConnection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/users": {
         parameters: {
             query?: never;
@@ -1068,7 +1212,7 @@ export interface components {
         };
         ActivityEntry: {
             action: string;
-            entityType: string;
+            entityType: null | string;
             /** Format: date-time */
             occurredAtUtc: string;
             userEmail: null | string;
@@ -1333,6 +1477,34 @@ export interface components {
             /** Format: double */
             total: number | string;
         };
+        JobRunDto: {
+            /** Format: int64 */
+            durationMs: null | number | string;
+            error: null | string;
+            /** Format: date-time */
+            finishedAtUtc: null | string;
+            /** Format: uuid */
+            id: string;
+            instance: string;
+            jobName: string;
+            /** Format: date-time */
+            startedAtUtc: string;
+            status: string;
+        };
+        JobRunsPage: {
+            hasMore: boolean;
+            runs: components["schemas"]["JobRunDto"][];
+        };
+        JobStateDto: {
+            lastRun: null | components["schemas"]["JobRunDto"];
+            /** Format: date-time */
+            lastSucceededAtUtc: null | string;
+            name: string;
+            /** Format: date-time */
+            nextDueUtc: string;
+            schedule: string;
+            stale: boolean;
+        };
         MarkInvoicePaidRequest: {
             paymentReference: null | string;
         };
@@ -1340,6 +1512,21 @@ export interface components {
             /** Format: double */
             amount: number | string;
             currency: string;
+        };
+        MonitoringOverview: {
+            health: components["schemas"]["DashboardHealth"];
+            jobs: components["schemas"]["JobStateDto"][];
+            outbox: components["schemas"]["OutboxDepth"];
+            process: null | components["schemas"]["ProcessMetrics"];
+        };
+        OutboxDepth: {
+            /** Format: int64 */
+            messagesLast24h: number | string;
+            note: string;
+            /** Format: int64 */
+            oldestMessageAgeSeconds: null | number | string;
+            /** Format: int64 */
+            totalMessages: number | string;
         };
         PagedResultOfAuditLogListItem: {
             items: components["schemas"]["AuditLogListItem"][];
@@ -1483,6 +1670,17 @@ export interface components {
             title?: null | string;
             type?: null | string;
         };
+        ProcessMetrics: {
+            /** Format: double */
+            cpuPercent: null | number | string;
+            instance: string;
+            /** Format: date-time */
+            sampledAtUtc: string;
+            /** Format: int64 */
+            uptimeSeconds: number | string;
+            /** Format: int64 */
+            workingSetMb: number | string;
+        };
         ProvisionGymRequest: {
             countryCode: string;
             currency: string;
@@ -1532,6 +1730,10 @@ export interface components {
         SetGymFeaturesRequest: {
             features: components["schemas"]["GymFeatureRequest"][];
         };
+        SetMaintenanceModeRequest: {
+            enabled: boolean;
+            message: null | string;
+        };
         SetPasswordRequest: {
             newPassword: string;
             token: string;
@@ -1551,9 +1753,34 @@ export interface components {
         SetUserRolesRequest: {
             roleIds: string[];
         };
+        SettingValueWrite: {
+            key: string;
+            value: null | string;
+        };
+        SettingView: {
+            category: string;
+            description: string;
+            isSensitive: boolean;
+            key: string;
+            source: string;
+            /** Format: date-time */
+            updatedAtUtc: null | string;
+            /** Format: uuid */
+            updatedBy: null | string;
+            valid: boolean;
+            validationMessage: null | string;
+            value: null | string;
+            valueType: string;
+        };
         SignInRequest: {
             email: string;
             password: string;
+        };
+        SmtpConnectionTestResult: {
+            error: null | string;
+            ok: boolean;
+            server: null | string;
+            stage: null | string;
         };
         SubscriptionDetail: {
             /** Format: double */
@@ -1633,6 +1860,10 @@ export interface components {
             storageLimitMb: null | number | string;
             /** Format: int32 */
             trialDays: number | string;
+        };
+        UpdateSettingsRequest: {
+            category: string;
+            values: components["schemas"]["SettingValueWrite"][];
         };
         UpdateUserRequest: {
             firstName: string;
@@ -1855,6 +2086,60 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PagedResultOfAuditLogListItem"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ExportAuditLogs: {
+        parameters: {
+            query?: {
+                userId?: string;
+                action?: string;
+                entityType?: string;
+                entityId?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv; charset=utf-8": string;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
                 };
             };
             /** @description Unauthorized */
@@ -3770,6 +4055,145 @@ export interface operations {
             };
         };
     };
+    GetJobStates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobStateDto"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    ListJobRuns: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+                status?: string;
+                limit?: number | string;
+            };
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobRunsPage"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetMonitoringOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MonitoringOverview"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
     ListPlans: {
         parameters: {
             query?: {
@@ -4440,6 +4864,216 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    GetSettings: {
+        parameters: {
+            query?: {
+                category?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingView"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    UpdateSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingView"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    SetMaintenanceMode: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Step-up confirmation, echoing the resource's own identifier (a gym's slug, an invoice's number). A header rather than a body field so it survives DELETE and cannot be replayed by a script that never read the resource. */
+                "X-Confirm-Action": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetMaintenanceModeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingView"][];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+        };
+    };
+    TestEmailConnection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SmtpConnectionTestResult"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetails"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
