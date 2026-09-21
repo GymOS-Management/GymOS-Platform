@@ -37,22 +37,62 @@ jobs:
       - name: Dependency policy
         run: node scripts/check-dependencies.mjs
 
-      - name: Types match the committed API contract
-        # The generated types are checked in, so drift between them and the backend's contract is
-        # visible in review rather than discovered at runtime (AD-12). Regenerate with `pnpm gen:api`.
-        run: |
-          if [ -f ../GymOS-Backend/contracts/openapi-v1.json ]; then
-            pnpm gen:api
-            git diff --exit-code src/types/api.d.ts
-          else
-            echo "Backend contract not checked out; skipping drift check."
-          fi
+      # The API contract drift check used to live here, guarded by `if [ -f ../GymOS-Backend/... ]`.
+      # This job checks out one repository, so that file never existed and the guard took the else
+      # branch on every run since it was written — a gate that reported success without comparing
+      # anything. It now has its own job below, which checks the backend out beside this repo.
 
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm test
       - run: pnpm build
+
+  # The generated types are checked in, so drift between them and the backend's contract is visible
+  # in review rather than discovered at runtime (AD-12) — and .prettierignore documents this job as
+  # the reason src/types/api.d.ts is left exactly as the generator emits it.
+  #
+  # It is a separate job because the comparison needs GymOS-Backend checked out beside this repo, the
+  # same two-repo layout the e2e job below uses. Running it inside `checks` would mean either a second
+  # checkout polluting the working tree that `lint` and `format:check` walk, or the guarded version
+  # that silently passed. Like e2e, this takes the backend's default branch: the question it answers
+  # is whether the committed types match the contract the backend ships, not the one a feature branch
+  # is proposing.
+  contract:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: GymOS-Platform
+    steps:
+      - name: Check out the console
+        uses: actions/checkout@v4
+        with:
+          path: GymOS-Platform
+
+      - name: Check out the backend
+        uses: actions/checkout@v4
+        with:
+          repository: GymOS-Management/GymOS-Backend
+          path: GymOS-Backend
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: GymOS-Platform/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: GymOS-Platform/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Types match the backend contract
+        # Regenerate with `pnpm gen:api`, which reads ../GymOS-Backend/contracts/openapi-v1.json —
+        # the path this job's layout reproduces, so developers and CI run the identical command.
+        run: |
+          pnpm gen:api
+          git diff --exit-code src/types/api.d.ts
 
   # The journey against a real backend and a real database. Separate job: it needs services and
   # minutes, and a failure here means something different from a failing unit test.
